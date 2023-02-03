@@ -10,7 +10,7 @@
  * @target MZ
  * @plugindesc This plugin allows you to type the Korean <RS_HangulInput>
  * @author biud436
- * @url https://biud436.tistory.com
+ * @url https://github.com/biud436/MZ
  *
  * @param variableId
  * @text Variable ID
@@ -69,6 +69,8 @@
  * Change Log
  * ==============================================================
  * 2020.08.09 (v1.0.0) - First Release.
+ * 2023.02.03 (v1.0.1) :
+ * - Fixed the bug that causes error if text is empty and the user presses the backspace key
  *
  * @command HangulInput
  * @text Hangul Name Input
@@ -78,6 +80,7 @@
  * @target MZ
  * @plugindesc 한글 조합 입력기 <RS_HangulInput>
  * @author 러닝은빛(biud436)
+ * @url https://github.com/biud436/MZ
  *
  * @param variableId
  * @text 변수 ID
@@ -118,6 +121,8 @@
  * Change Log
  * ==============================================================
  * 2020.08.09 (v1.0.0) - First Release.
+ * 2023.02.03 (v1.0.1) :
+ * - 아무런 글자를 입력하지 않은 상태에서 뒤로가기 누르면 오류가 뜨는 문제 수정
  *
  * @command HangulInput
  * @text 한글 이름 입력
@@ -789,7 +794,7 @@ RS.Keyboard = RS.Keyboard || {};
         processBackspace() {
             const joinedText = this._texts.split("");
             const texts = RS.Hangul.decompress(this._texts);
-            const pos = this.currentCursorPosition() - 1;
+            let pos = this.currentCursorPosition() - 1;
             if (pos < 0) pos = 0;
 
             if (RS.Hangul.isComposite()) {
