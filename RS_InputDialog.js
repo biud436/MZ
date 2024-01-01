@@ -64,6 +64,12 @@
  * @desc Edit the css as you want.
  * @default ""
  *
+ * @param Font Family
+ * @parent Style
+ * @type String
+ * @desc Specify the font family.
+ * @default GameFont
+ *
  * @param Button Name
  *
  * @param Ok
@@ -138,6 +144,9 @@
  * - Fixed the issue that can not create a background when using Irina_PerformanceUpgrade.
  * 2020.08.28 (v2.0.0) :
  * - Ported with MZ.
+ * 2024.01.01 (v2.1.0) :
+ * - added a feature that can change the font family.
+ * - fixed the issue that can't move cursor by touch on mobile device.
  *
  * @command open
  * @desc Opens Input Dialog.
@@ -253,6 +262,10 @@ RS.Utils = RS.Utils || {};
         parameters["Max Length"] || "6"
     );
 
+    RS.InputDialog.Params.szFontFamily = String(
+        parameters["Font Family"] || "GameFont"
+    );
+
     RS.InputDialog.Params.szTextBoxId = "md_textBox";
     RS.InputDialog.Params.szFieldId = "md_inputField";
 
@@ -364,6 +377,34 @@ RS.Utils = RS.Utils || {};
                 return true;
         }
         return false;
+    };
+
+    TouchInput._onTouchStart = function (event) {
+        const field = document.getElementById(RS.InputDialog.Params.szFieldId);
+        const isFieldVisible = field && field.style.display !== "none";
+
+        for (const touch of event.changedTouches) {
+            const x = Graphics.pageToCanvasX(touch.pageX);
+            const y = Graphics.pageToCanvasY(touch.pageY);
+            if (Graphics.isInsideCanvas(x, y)) {
+                this._screenPressed = true;
+                this._pressedTime = 0;
+                if (event.touches.length >= 2) {
+                    this._onCancel(x, y);
+                } else {
+                    this._onTrigger(x, y);
+                }
+
+                if (!isFieldVisible) {
+                    event.preventDefault();
+                }
+            }
+        }
+        if (window.cordova || window.navigator.standalone) {
+            if (!isFieldVisible) {
+                event.preventDefault();
+            }
+        }
     };
 
     const utils = {
@@ -574,16 +615,19 @@ RS.Utils = RS.Utils || {};
 
             const field = document.getElementById(this._fieldId);
 
+            if (RS.InputDialog.Params.szFontFamily === "") {
+                RS.InputDialog.Params.szFontFamily = "GameFont";
+            }
+
             const style = `
         .inputDialogContainer {
-          min-width : 10em;
-          max-width : 2.5em;
+          min-width : 31em;
+          max-width : 31em;
           top : 0em;
           left : 0em;
-          width : 10em;
           height : 2.5em;
           display : flex;
-          flex-flow : column wrap;
+          flex-flow : row wrap;
           align-items : left;
           justify-content : left;
           padding : 0;
@@ -591,6 +635,7 @@ RS.Utils = RS.Utils || {};
           box-sizing : border-box;
           resize : both;
           font-size: 16px!important;
+          gap: 0.5em;
       }
 
       .inputDialogContainer > tr:last-child {
@@ -605,31 +650,29 @@ RS.Utils = RS.Utils || {};
           z-index : 1000;
           opacity : 0.8;
           position : relative;
-          background-image: 
-            linear-gradient(to bottom, #ccc, white 50%, #ccc);
-          border : 2px solid #ccc;
           border-radius : 10px;
-          text-shadow : 0px 1px 3px #696969;
-          font-family : arial;
+          font-family : ${RS.InputDialog.Params.szFontFamily};  
           font-weight: bold;
           outline : none;
           font-size: 1rem!important;
+
+          background-color : #e0e0e0;
+          border : 1px solid #e0e0e0;
+          padding : 0.5em;
       }
       
       .defaultButton {
           opacity : 0.8;
-          font-family : arial;
-          border : 2px solid #ccc;
-          background-image: 
-            linear-gradient(to bottom, #ffffff 0%, #f4f4f4 100%);
+          font-family : ${RS.InputDialog.Params.szFontFamily};
           color : rgb(19, 19, 19);
-          text-shadow : rgba(105, 105, 105, 0.7) 0 1px 0;
           cursor : pointer;
-          color: #9c9c9c;
           border-radius: 5px;
           box-sizing : border-box;
-          box-shadow : 0 1px 4px rgba(78, 78, 78, 0.6);
           font-size : 1rem!important;
+          border : 1px solid #e0e0e0;
+          background-color : #e0e0e0;
+          padding : 0.5em;
+          transition: all 0.2s ease-in-out;
       }
 
       .defaultButton:active {
@@ -642,47 +685,27 @@ RS.Utils = RS.Utils || {};
       }     
 
       .row {
-          width : 70%;
-          height: 1rem;
+            display : flex;
+            flex-flow : row wrap;
+            align-items : center;
+            justify-content : center;
+            gap: 0.5em;
       }
-      
+
+      .row-flex-end {
+            display : flex;
+            flex-flow : row wrap;
+            align-items : center;
+            justify-content : flex-end;
+            width: 100%;
+      }
+
       .col {
-          width : 70%;
-          height: 1rem;
-      }
-      
-      @media screen and (min-width : 192px) and (max-width : 768px) {
-          .defaultButton {
-              font-size : 1rem!important;
-          }
-          .row {
-              width : 100%;
-              height: 2rem;
-          }
-          .col {
-              width : 100%;
-              height: 2rem;
-          }
-          .inputDialog {
-              font-size : 1rem!important;
-          }
-      }
-      
-      @media screen and (min-width : 768px) and (max-width : 1000px) {
-          .defaultButton {
-              font-size : 1rem!important;
-          }
-          .row {
-              width : 100%;
-              height: 2rem;
-          }
-          .col {
-              width : 100%;
-              height: 2rem;
-          }
-          .inputDialog {
-              font-size : 1rem!important;
-          }
+            display : flex;
+            flex-flow : column wrap;
+            align-items : center;
+            justify-content : center;
+            gap: 0.5em;
       }
           `;
 
@@ -696,20 +719,16 @@ RS.Utils = RS.Utils || {};
           direction : ${RS.InputDialog.Params.inputDirection};
         }
         </style>
-        <table class="inputDialogContainer">
-              <tr class="row">
-                  <td class="col">
-                      <input class="inputDialog" type="text" id"=${id} placeholder="${RS.InputDialog.Params.localText}">
-                  </td>
-              </tr>
-              <tr class="row" valign="bottom">
-                  <td class="col" align="right">
-                      <input class="defaultButton" id="inputDialog-OkBtn" type="button" value="${RS.InputDialog.Params.okButtonName}" name="">
-                      <input class="defaultButton" id="inputDialog-CancelBtn" type="button" value="${RS.InputDialog.Params.cancelButtonName}" name="">
-                  </td>
-              </tr>
+        <div class="inputDialogContainer">
+            <div class="row">
+                <input class="inputDialog" type="text" id"=${id} placeholder="${RS.InputDialog.Params.localText}">
+            </div>
+            <div class="row row-flex-end">
+                <input class="defaultButton" id="inputDialog-OkBtn" type="button" value="${RS.InputDialog.Params.okButtonName}" name="">
+                <input class="defaultButton" id="inputDialog-CancelBtn" type="button" value="${RS.InputDialog.Params.cancelButtonName}" name="">
+            </div>
         <img src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7' onload='TextBox.onLoadAfterInnerHTML();this.parentNode.removeChild(this);'>
-          </table>
+          </div>
         `;
 
             field.innerHTML = divInnerHTML;
@@ -727,20 +746,20 @@ RS.Utils = RS.Utils || {};
 
         getTextBoxId() {
             "use strict";
-            const query = `div#${RS.InputDialog.Params.szFieldId} table.inputDialogContainer tr td input[type=text]`;
+            const query = `div#${RS.InputDialog.Params.szFieldId} .inputDialog`;
             return document.querySelector(query);
         }
 
         getDefaultButtonId(id) {
             "use strict";
             id = id || "inputDialog-OkBtn";
-            const query = `div#${RS.InputDialog.Params.szFieldId} table.inputDialogContainer tr td input[type=button][id=${id}]`;
+            const query = `#${id}`;
             return document.querySelector(query);
         }
 
         getMainContainer() {
             "use strict";
-            const query = `div#${RS.InputDialog.Params.szFieldId} table.inputDialogContainer`;
+            const query = `div#${RS.InputDialog.Params.szFieldId} .inputDialogContainer`;
             return document.querySelector(query);
         }
 
