@@ -147,6 +147,8 @@
  * 2024.01.01 (v2.1.0) :
  * - added a feature that can change the font family.
  * - fixed the issue that can't move cursor by touch on mobile device.
+ * 2024.01.01 (v2.1.1) :
+ * - Fixed an issue with <input> appearing in the right-hand corner on mobile.
  *
  * @command open
  * @desc Opens Input Dialog.
@@ -621,21 +623,19 @@ RS.Utils = RS.Utils || {};
 
             const style = `
         .inputDialogContainer {
-          min-width : 31em;
-          max-width : 31em;
-          top : 0em;
-          left : 0em;
-          height : 2.5em;
           display : flex;
-          flex-flow : row wrap;
-          align-items : left;
-          justify-content : left;
+          align-items : center;
+          justify-content : center;
+          width: 100%;
+          height: 100%;
           padding : 0;
           margin : 0;
           box-sizing : border-box;
           resize : both;
           font-size: 16px!important;
           gap: 0.5em;
+          flex-direction: column;
+          
       }
 
       .inputDialogContainer > tr:last-child {
@@ -697,7 +697,7 @@ RS.Utils = RS.Utils || {};
             flex-flow : row wrap;
             align-items : center;
             justify-content : flex-end;
-            width: 100%;
+            width: 488px;
       }
 
       .col {
@@ -846,18 +846,12 @@ RS.Utils = RS.Utils || {};
             field.style.position = "absolute";
             field.style.left = "0";
             field.style.top = "0";
-            field.style.right = "0";
-            field.style.bottom = "0";
             field.style.width = "100%";
             field.style.height = "100%";
             field.style.zIndex = "0";
             field.style.display = "none";
 
             document.body.appendChild(field);
-
-            if (RS.InputDialog.Params.isCenterAlignment) {
-                Graphics._centerElement(field);
-            }
 
             return field;
         }
@@ -982,7 +976,7 @@ RS.Utils = RS.Utils || {};
 
             if (field && textBox) {
                 Graphics._centerElement(field);
-                Graphics._centerElement(mainContainer);
+                // Graphics._centerElement(mainContainer);
                 this.setRect();
 
                 if (RS.InputDialog.Params.isCenterAlignment) {
