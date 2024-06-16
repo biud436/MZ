@@ -165,11 +165,7 @@ Imported.RS_MapFadeEffect = true;
         alias_Game_Player_reserveTransfer.call(this, mapId, x, y, d, fadeType);
         const map = $gameMap;
         if (map.hasFadeEffect()) {
-            if (fadeType === 0) {
-                map.fadeIn();
-            } else {
-                map.fadeOut();
-            }
+            map.fadeIn();
         }
 
         map.fadeEffect().currentDuration = 0;
