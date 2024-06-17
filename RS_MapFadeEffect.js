@@ -216,7 +216,6 @@ Imported.RS_MapFadeEffect = true;
         }
 
         if (map.isFadeEffect() || this._transfer) {
-            console.log(map.fadeEffect().radius);
             map.updateFadeEffect();
             this._fadeMask = utils.updateMask(
                 this._fadeMask,
