@@ -188,7 +188,7 @@
     #value = 0;
 
     /**
-     * lazy하게 값을 평가하기 위해 참조 값입니다.
+     * lazy하게 값을 평가하기 위한 참조 값입니다.
      *
      * @type {() => number}
      */
@@ -203,7 +203,7 @@
     }
 
     /**
-     * lazy하게 값을 평가하기 위해 참조 값을 설정합니다.
+     * lazy하게 값을 평가하기 위한 참조 값을 설정합니다.
      */
     set ref(ref) {
       this.#ref = ref;
@@ -244,6 +244,18 @@
   }
 
   const $dispatcher = new Dispatcher();
+
+  //==========================================================
+  // Logger
+  //==========================================================
+
+  /**
+   *
+   * @param {String} message
+   */
+  function logger(message) {
+    console.log("Logger: ", message);
+  }
 
   //==========================================================
   // DraggingableSprite
@@ -1146,9 +1158,6 @@
     }
 
     initSlots() {
-      // 슬롯과 슬롯 사이의 간격
-      const pad = 2;
-
       // 전체 테이블의 크기
       const { width, height } = this._size;
 
@@ -1201,17 +1210,14 @@
         if (this.dragging && this._mouseButtonReleased) {
           this._currentState = "CLICKED";
           this._mouseButtonReleased = false;
-          // this.emit("onButtonTriggered");
           if (this._background) this._background.setColorTone([60, 60, 60, 60]);
         } else if (!this.dragging) {
           this._mouseButtonReleased = true;
           this._currentState = "MOUSE_OVER";
-          // this.emit("onButtonEnter");
           if (this._background) this._background.setColorTone([30, 30, 30, 30]);
         }
       } else {
         this._currentState = "MOUSE_OUT";
-        // this.emit("onButtonExit");
         if (this._background) this._background.setColorTone([0, 0, 0, 0]);
       }
     }
@@ -1334,6 +1340,8 @@
     this.save();
     // 인벤토리 준비
     this.prepareInventory();
+
+    logger("Game_Inventory.prototype.initialize");
   };
 
   Game_Inventory.prototype.initMembers = function () {
@@ -1345,6 +1353,8 @@
     this._prepared = false;
     // 슬롯 아이디
     this._id = 0;
+
+    logger("Game_Inventory.prototype.initMembers");
   };
 
   Game_Inventory.prototype.slots = function () {
@@ -1372,6 +1382,8 @@
 
     // 준비 완료
     this._prepared = true;
+
+    logger("Game_Inventory.prototype.prepareInventory");
   };
 
   Game_Inventory.prototype.save = function () {
@@ -1381,6 +1393,8 @@
     });
     // 해당 슬롯의 인덱스를 세이브 파일에 저장한다.
     $gameSystem.saveSlots(JsonEx.stringify(newList));
+
+    logger("Game_Inventory.prototype.save");
   };
 
   Game_Inventory.prototype.restore = function () {
@@ -1398,11 +1412,15 @@
       }
     }, this);
     this._id = this._restoreSlots.length;
+
+    logger("Game_Inventory.prototype.restore");
   };
 
   Game_Inventory.prototype.removeAllSlots = function () {
     // 멤버 변수를 다시 생성한다.
     this.initMembers();
+
+    logger("Game_Inventory.prototype.removeAllSlots");
   };
 
   Game_Inventory.prototype.updateInventory = function () {
@@ -1412,6 +1430,8 @@
     this.restore();
     // 인벤토리를 다시 준비한다.
     this.prepareInventory();
+
+    logger("Game_Inventory.prototype.updateInventory");
   };
 
   Game_Inventory.prototype.newItem = function (slotId, item) {
@@ -1431,6 +1451,8 @@
 
     // 아이템 슬롯 ID
     newItem.slotId = slotId || 0;
+
+    logger("Game_Inventory.prototype.newItem");
 
     return newItem;
   };
@@ -1463,6 +1485,8 @@
 
     // ID 값을 1만큼 늘린다.
     this.nextId();
+
+    logger("Game_Inventory.prototype.createItem");
   };
 
   /**
@@ -1479,6 +1503,8 @@
       this._slots[item1].slotId = slotId2;
       this._slots[item2].slotId = slotId1;
     }
+
+    logger("Game_Inventory.prototype.swapItem");
   };
 
   /**
@@ -1497,6 +1523,8 @@
       const temp = this._slots[item1].slotId;
       this._slots[item1].slotId = newTo;
     }
+
+    logger("Game_Inventory.prototype.moveTo");
   };
 
   Game_Inventory.prototype.removeItem = function (slotId) {
@@ -1508,11 +1536,17 @@
       this._slots.splice(deleteIndex, 1);
       this.save();
     }
+
+    logger("Game_Inventory.prototype.removeItem");
   };
 
   Game_Inventory.prototype.refresh = function () {
     $gameMap.requestRefresh();
   };
+
+  //==========================================================
+  // Game_Party
+  //==========================================================
 
   const alias_Game_Party_initialize = Game_Party.prototype.initialize;
   Game_Party.prototype.initialize = function () {
