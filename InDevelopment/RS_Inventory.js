@@ -1523,6 +1523,10 @@
         }
 
         restore() {
+            if ($gameSystem._invSlots === "" || !$gameSystem._invSlots) {
+                $gameSystem._invSlots = "[]";
+            }
+
             // 인덱스 값이 배열로 저장되어있다.
             this._restoreSlots = JsonEx.parse($gameSystem._invSlots);
             if (!this._restoreSlots || !Array.isArray(this._restoreSlots)) {
