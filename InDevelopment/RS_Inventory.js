@@ -1298,15 +1298,22 @@
             this.y += this._velocityY;
         }
 
-        updateState() {
+        #isMouseIn() {
             const itemHeight = Params.itemBox.height;
+            const { width, height } = this._size;
+            const { x, y } = this;
+            const { x: mouseX, y: mouseY } = this._mousePos;
 
-            if (
-                this._mousePos.x < this.x + this._size.width &&
-                this._mousePos.x > this.x &&
-                this._mousePos.y < this.y + this._size.height + itemHeight &&
-                this._mousePos.y > this.y
-            ) {
+            return (
+                mouseX < x + width &&
+                mouseX > x &&
+                mouseY < y + height + itemHeight &&
+                mouseY > y
+            );
+        }
+
+        updateState() {
+            if (this.#isMouseIn()) {
                 if (this.dragging && this._mouseButtonReleased) {
                     this._currentState = "CLICKED";
                     this._mouseButtonReleased = false;
@@ -1513,7 +1520,7 @@
 
         save() {
             // 슬롯의 인덱스만 추출한다.
-            const newList = this._slots.map(function (i) {
+            const newList = this._slots.map((i) => {
                 return i.slotId;
             });
             // 해당 슬롯의 인덱스를 세이브 파일에 저장한다.
@@ -1533,13 +1540,13 @@
                 console.warn("인덱스 배열을 찾지 못했습니다");
                 return;
             }
-            this._restoreSlots.forEach(function (e, i, a) {
+            this._restoreSlots.forEach((e, i) => {
                 const item = this._slots[i];
 
                 if (item && "slotId" in item) {
                     this._slots[i].slotId = e;
                 }
-            }, this);
+            });
             this._id = this._restoreSlots.length;
 
             logger("restore");
@@ -1591,7 +1598,7 @@
          */
         isExist(slotId) {
             // 슬롯 목록에서 아이템을 찾는다.
-            const item = this._slots.filter(function (i) {
+            const item = this._slots.filter((i) => {
                 return i && i.slotId === slotId;
             });
             return item[0];
@@ -1784,14 +1791,11 @@
 
     Scene_Map.prototype.refreshInventory = function () {
         if (!this._spriteset) return;
-        const timeId = setTimeout(
-            function () {
-                $gameInventory.save();
-                const inventory = this._spriteset._inventory;
-                inventory.refresh();
-            }.bind(this),
-            5
-        );
+        const timeId = setTimeout(() => {
+            $gameInventory.save();
+            const inventory = this._spriteset._inventory;
+            inventory.refresh();
+        }, 5);
 
         // eslint-disable-next-line consistent-return
         return timeId;
