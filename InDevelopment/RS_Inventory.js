@@ -10,7 +10,7 @@
 //================================================================
 /*:
  * @target MZ
- * @plugindesc This plugin allows you to use certain item and show gold using modern game inventory system. <RS_Inventory>
+ * @plugindesc <RS_Inventory>
  * @author biud436
  *
  * @param variableId
@@ -57,6 +57,33 @@
 
     let $gameInventory = {};
 
+    /**
+     * Below parameters are used to change the style of the text.
+     * in the future, it will be added to the plugin parameters.
+     *
+     * @type {Record<string, unknown>}
+     */
+    const styledTextOptions = {
+        align: "right",
+        breakWords: true,
+        dropShadow: true,
+        dropShadowBlur: 1,
+        dropShadowColor: "#585858",
+        dropShadowDistance: 0,
+        fill: ["#af8f45", "#4b4943"],
+        fontSize: 16,
+        fontWeight: "bold",
+        stroke: "#d3d3d3",
+        strokeThickness: 2,
+        wordWrap: true,
+        wordWrapWidth: 300,
+    };
+
+    /**
+     * @type {{parameters: {
+     * [key in 'item-width' | 'item-height' | 'divide-area-for-height']: string;
+     * } | Record<string, string>}}
+     */
     const { parameters } = $plugins.filter(function (i) {
         return i.description.contains("<RS_Inventory>");
     })[0];
@@ -72,7 +99,8 @@
 
     /**
      * Params
-     * @enum {Object}
+     *
+     * @enum {{ id: Point, itemBox: {width: number, height: number}, maxRows: number}}
      */
     const Params = {};
 
@@ -181,44 +209,84 @@
     }
 
     //==========================================================
-    // Observer & Dispatcher
+    // Observer
     //==========================================================
 
+    /**
+     * @class Observer
+     */
     class Observer {
-        #value = 0;
+        value = 0;
 
         /**
          * lazy하게 값을 평가하기 위한 참조 값입니다.
          *
          * @type {() => number}
          */
-        #ref = () => 0;
+        ref = () => 0;
 
         constructor() {
-            this.#value = 0;
+            this.value = 0;
+            this.ref = () => 0;
         }
 
         set value(value) {
-            this.#value = value;
+            this.value = value;
         }
 
         /**
          * lazy하게 값을 평가하기 위한 참조 값을 설정합니다.
          */
         set ref(ref) {
-            this.#ref = ref;
+            this.ref = ref;
         }
 
         update() {
-            if (!this.#ref) return;
-            if (typeof this.#ref !== "function") return;
-            if (this.#value === this.#ref()) return;
+            if (!this.ref) return;
+            if (typeof this.ref !== "function") return;
+            if (this.value === this.ref()) return;
 
             $gameMap.requestRefresh();
 
-            this.#value = this.#ref();
+            this.value = this.ref();
         }
     }
+
+    //==========================================================
+    // ItemObserver
+    //==========================================================
+
+    /**
+     * @class ItemObserver
+     */
+    class ItemObserverContainer {
+        constructor() {
+            this.container = new WeakMap();
+        }
+
+        gainItem(item, amount) {
+            const itemObserver = this.container.get(item);
+            if (!itemObserver) {
+                this.container.set(item, new Observer());
+            }
+
+            const observer = this.container.get(item);
+            observer.ref = () => $gameParty.numItems(item);
+            observer.value = $gameParty.numItems(item) + amount;
+
+            observer.update();
+        }
+
+        update() {
+            for (let [item, observer] of this.container) {
+                observer.update();
+            }
+        }
+    }
+
+    //==========================================================
+    // Dispatcher
+    //==========================================================
 
     class Dispatcher {
         constructor() {
@@ -1110,25 +1178,10 @@
         }
 
         drawGold() {
-            const goldValue = `${$gameParty.gold()} ${
-                TextManager.currencyUnit
-            }`;
+            const { currencyUnit } = TextManager;
+            const goldValue = `${$gameParty.gold()} ${currencyUnit}`;
 
-            const style = new PIXI.TextStyle({
-                align: "right",
-                breakWords: true,
-                dropShadow: true,
-                dropShadowBlur: 1,
-                dropShadowColor: "#585858",
-                dropShadowDistance: 0,
-                fill: ["#af8f45", "#4b4943"],
-                fontSize: 16,
-                fontWeight: "bold",
-                stroke: "#d3d3d3",
-                strokeThickness: 2,
-                wordWrap: true,
-                wordWrapWidth: 300,
-            });
+            const style = new PIXI.TextStyle(styledTextOptions);
 
             const text = new PIXI.Text(goldValue, style);
             const itemHeight = Params.itemBox.height;
@@ -1448,40 +1501,27 @@
     };
 
     Game_Inventory.prototype.removeAllSlots = function () {
-        // 멤버 변수를 다시 생성한다.
         this.initMembers();
 
         logger("Game_Inventory.prototype.removeAllSlots");
     };
 
     Game_Inventory.prototype.updateInventory = function () {
-        // 모든 슬롯을 제거한다.
-        this.removeAllSlots();
-        // 인덱스 복구
-        this.restore();
-        // 인벤토리를 다시 준비한다.
-        this.prepareInventory();
+        // this.removeAllSlots();
+        // this.restore();
+        // this.prepareInventory();
 
         logger("Game_Inventory.prototype.updateInventory");
     };
 
     Game_Inventory.prototype.newItem = function (slotId, item) {
-        const newItem = {};
-
-        // 아이템 설정
-        newItem.item = item;
-
-        // 아이템 제목
-        newItem.name = item.name || "";
-
-        // 아이템 아이콘 인덱스
-        newItem.iconIndex = item.iconIndex || 0;
-
-        // 아이템 설명
-        newItem.description = item.description;
-
-        // 아이템 슬롯 ID
-        newItem.slotId = slotId || 0;
+        const newItem = {
+            item: item,
+            name: item.name || "",
+            iconIndex: item.iconIndex || 0,
+            description: item.description,
+            slotId: slotId || 0,
+        };
 
         logger("Game_Inventory.prototype.newItem");
 
