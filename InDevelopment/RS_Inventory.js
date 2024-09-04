@@ -1548,9 +1548,9 @@
         }
 
         updateInventory() {
-            // this.removeAllSlots();
-            // this.restore();
-            // this.prepareInventory();
+            this.removeAllSlots();
+            this.restore();
+            this.prepareInventory();
 
             logger("updateInventory");
         }
