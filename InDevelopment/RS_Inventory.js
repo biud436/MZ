@@ -63,23 +63,64 @@
     /**
      * Below parameters are used to change the style of the text.
      * in the future, it will be added to the plugin parameters.
-     *
-     * @type {Record<string, unknown>}
      */
-    const styledTextOptions = {
-        align: "right",
-        breakWords: true,
-        dropShadow: true,
-        dropShadowBlur: 1,
-        dropShadowColor: "#585858",
-        dropShadowDistance: 0,
-        fill: ["#af8f45", "#4b4943"],
-        fontSize: 16,
-        fontWeight: "bold",
-        stroke: "#d3d3d3",
-        strokeThickness: 2,
-        wordWrap: true,
-        wordWrapWidth: 300,
+    const StyleSheet = {
+        gold: {
+            align: "right",
+            breakWords: true,
+            dropShadow: true,
+            dropShadowBlur: 1,
+            dropShadowColor: "#585858",
+            dropShadowDistance: 0,
+            fill: ["#af8f45", "#4b4943"],
+            fontSize: 16,
+            fontWeight: "bold",
+            stroke: "#d3d3d3",
+            strokeThickness: 2,
+            wordWrap: true,
+            wordWrapWidth: 300,
+        },
+        normalText: {
+            breakWords: true,
+            fillGradientStops: [0],
+            fill: "white",
+            stroke: "black",
+            strokeThickness: 2,
+            wordWrap: true,
+        },
+        redText: {
+            breakWords: true,
+            dropShadow: true,
+            dropShadowBlur: 1,
+            dropShadowColor: "#262626",
+            dropShadowDistance: 0,
+            fill: "#f20000",
+            strokeThickness: 1,
+            wordWrap: true,
+        },
+        yellowText: {
+            breakWords: true,
+            dropShadow: true,
+            dropShadowBlur: 1,
+            dropShadowColor: "#262626",
+            dropShadowDistance: 0,
+            fill: ["#eff2b7", "#e3e97e"],
+            fillGradientStops: [0],
+            strokeThickness: 1,
+            wordWrap: true,
+        },
+        blueGlowText: {
+            breakWords: true,
+            dropShadow: true,
+            dropShadowBlur: 6,
+            dropShadowColor: "#71f4ca",
+            dropShadowDistance: 0,
+            fillGradientStops: [0],
+            fontWeight: 600,
+            stroke: "white",
+            strokeThickness: 2,
+            wordWrap: true,
+        },
     };
 
     /**
@@ -900,73 +941,44 @@
             this.addChild(this._textLayer);
         }
 
-        makeNormalColor(width, fontSize = 16) {
+        #makeNormalColor(width, fontSize = 16) {
             const wordWrapWidth = width || this._size.width;
             const style = new PIXI.TextStyle({
-                breakWords: true,
-                fillGradientStops: [0],
-                fill: "white",
+                ...StyleSheet.normalText,
                 fontSize,
-                stroke: "black",
-                strokeThickness: 2,
-                wordWrap: true,
                 wordWrapWidth,
             });
 
             return style;
         }
 
-        makeRedColor(width, fontSize = 16) {
+        #makeRedColor(width, fontSize = 16) {
             const wordWrapWidth = width || this._size.width;
             const style = new PIXI.TextStyle({
-                breakWords: true,
-                dropShadow: true,
-                dropShadowBlur: 1,
-                dropShadowColor: "#262626",
-                dropShadowDistance: 0,
-                fill: "#f20000",
+                ...StyleSheet.redText,
                 fontSize,
-                strokeThickness: 1,
-                wordWrap: true,
                 wordWrapWidth,
             });
 
             return style;
         }
 
-        makeYellowColor(width, fontSize = 16) {
+        #makeYellowColor(width, fontSize = 16) {
             const wordWrapWidth = width || this._size.width;
             const style = new PIXI.TextStyle({
-                breakWords: true,
-                dropShadow: true,
-                dropShadowBlur: 1,
-                dropShadowColor: "#262626",
-                dropShadowDistance: 0,
-                fill: ["#eff2b7", "#e3e97e"],
-                fillGradientStops: [0],
+                ...StyleSheet.yellowText,
                 fontSize,
-                strokeThickness: 1,
-                wordWrap: true,
                 wordWrapWidth,
             });
 
             return style;
         }
 
-        makeBlueGlowColor(width, fontSize = 16) {
+        #makeBlueGlowColor(width, fontSize = 16) {
             const wordWrapWidth = width || this._size.width;
             const style = new PIXI.TextStyle({
-                breakWords: true,
-                dropShadow: true,
-                dropShadowBlur: 6,
-                dropShadowColor: "#71f4ca",
-                dropShadowDistance: 0,
-                fillGradientStops: [0],
+                ...StyleSheet.blueGlowText,
                 fontSize,
-                fontWeight: 600,
-                stroke: "white",
-                strokeThickness: 2,
-                wordWrap: true,
                 wordWrapWidth,
             });
 
@@ -980,13 +992,13 @@
                 // eslint-disable-next-line default-case-last
                 default:
                 case "normal":
-                    return this.makeNormalColor(width, fontSize);
+                    return this.#makeNormalColor(width, fontSize);
                 case "red":
-                    return this.makeRedColor(width, fontSize);
+                    return this.#makeRedColor(width, fontSize);
                 case "yellow":
-                    return this.makeYellowColor(width, fontSize);
+                    return this.#makeYellowColor(width, fontSize);
                 case "blue":
-                    return this.makeBlueGlowColor(width, fontSize);
+                    return this.#makeBlueGlowColor(width, fontSize);
             }
         }
 
@@ -1204,7 +1216,7 @@
             const { currencyUnit } = TextManager;
             const goldValue = `${$gameParty.gold()} ${currencyUnit}`;
 
-            const style = new PIXI.TextStyle(styledTextOptions);
+            const style = new PIXI.TextStyle(StyleSheet.gold);
 
             const text = new PIXI.Text(goldValue, style);
             const itemHeight = Params.itemBox.height;
