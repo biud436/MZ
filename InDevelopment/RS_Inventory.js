@@ -278,7 +278,7 @@
         }
 
         update() {
-            for (let [item, observer] of this.container) {
+            for (let [, observer] of this.container) {
                 observer.update();
             }
         }
@@ -627,11 +627,26 @@
 
             const { width: w, height: h } = Params.itemBox;
 
+            /**
+             * @type {{_size: Rectangle; }}
+             */
             this._size = new PIXI.Rectangle(0, 0, w, h);
             this._divideAreaForHeight = 1;
             this._isOnTooltip = false;
+
+            /**
+             * @type {{_startX: number;}}
+             */
             this._startX = this.x;
+
+            /**
+             * @type {{_startY: number;}}
+             */
             this._startY = this.y;
+
+            /**
+             * @type {{_lastButton: number;}}
+             */
             this._lastButton = 0;
         }
 
@@ -673,6 +688,11 @@
             super.update();
         }
 
+        /**
+         * To call this method, you need to pass unique symbol to the method name.
+         *
+         * @param {(w: number, h: number, dw: number) => void} func
+         */
         [assignValues](func) {
             const { width: w, height: h } = this._size;
             const dw = w * Params.maxRows;
