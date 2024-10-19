@@ -149,6 +149,8 @@
  * - fixed the issue that can't move cursor by touch on mobile device.
  * 2024.01.01 (v2.1.1) :
  * - Fixed an issue with <input> appearing in the right-hand corner on mobile.
+ * 2024.10.19 (v2.2) :
+ * - Added a new event listener for the onchange event.
  *
  * @command open
  * @desc Opens Input Dialog.
@@ -861,6 +863,15 @@ RS.Utils = RS.Utils || {};
             const cancelButton = this.getDefaultButtonId(
                 "inputDialog-CancelBtn"
             );
+            const textBox = this.getTextBoxId();
+
+            if (textBox) {
+                textBox.addEventListener("change", (e) => {
+                    okFunc();
+                    e.preventDefault();
+                });
+            }
+
             okButton.addEventListener(
                 "click",
                 (e) => {
