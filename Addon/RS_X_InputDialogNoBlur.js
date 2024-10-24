@@ -6,6 +6,9 @@
  * @url https://github.com/biud436
  *
  * @help
+ * This plugin allows the removal of the blur effect on the background of the input dialog.
+ * it is targeted for RPG Maker MZ and is based on the RS_InputDialog plugin.
+ *
  * ===================================================================
  * Change Log
  * ===================================================================
