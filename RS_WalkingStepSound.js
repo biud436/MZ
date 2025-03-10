@@ -673,220 +673,220 @@
  * - RPG Maker MZ 용으로 업데이트 되었습니다.
  */
 (() => {
-    const pluginParams = $plugins.filter((i) => {
-        return i.description.contains("<RS_WalkingStepSound>");
-    });
+  const pluginParams = $plugins.filter((i) => {
+    return i.description.contains("<RS_WalkingStepSound>");
+  });
 
-    const pluginName = pluginParams.length > 0 && pluginParams[0].name;
-    const parameters = pluginParams.length > 0 && pluginParams[0].parameters;
+  const pluginName = pluginParams.length > 0 && pluginParams[0].name;
+  const parameters = pluginParams.length > 0 && pluginParams[0].parameters;
 
-    const TerrainTag = {
-        DIRT: Number(parameters["Dirt Terrain Tag"] || 1),
-        SNOW: Number(parameters["Snow Terrain Tag"] || 2),
-        STONE: Number(parameters["Stone Terrain Tag"] || 3),
-        WATER: Number(parameters["Water Terrain Tag"] || 4),
-        WOOD: Number(parameters["Wood Terrain Tag"] || 5),
-    };
+  const TerrainTag = {
+    DIRT: Number(parameters["Dirt Terrain Tag"] || 1),
+    SNOW: Number(parameters["Snow Terrain Tag"] || 2),
+    STONE: Number(parameters["Stone Terrain Tag"] || 3),
+    WATER: Number(parameters["Water Terrain Tag"] || 4),
+    WOOD: Number(parameters["Wood Terrain Tag"] || 5),
+  };
 
-    const config = {
-        stepInterval: Number(parameters["Step Interval"] || 2),
-        volume: Number(parameters["Volume"] || 30),
-        dirtSoundName: eval(parameters["Dirt Sound Name"]),
-        snowSoundName: eval(parameters["Snow Sound Name"]),
-        stoneSoundName: eval(parameters["Stone Sound Name"]),
-        waterSoundName: eval(parameters["Water Sound Name"]),
-        woodSoundName: eval(parameters["Wood Sound Name"]),
-        symbolName: String(parameters["Step Sound"] || "Step Sound"),
-        terrainTags: Object.values(TerrainTag),
-    };
+  const config = {
+    stepInterval: Number(parameters["Step Interval"] || 2),
+    volume: Number(parameters["Volume"] || 30),
+    dirtSoundName: eval(parameters["Dirt Sound Name"]),
+    snowSoundName: eval(parameters["Snow Sound Name"]),
+    stoneSoundName: eval(parameters["Stone Sound Name"]),
+    waterSoundName: eval(parameters["Water Sound Name"]),
+    woodSoundName: eval(parameters["Wood Sound Name"]),
+    symbolName: String(parameters["Step Sound"] || "Step Sound"),
+    terrainTags: Object.values(TerrainTag),
+  };
 
-    const TerrainSound = {
-        dirt: config.dirtSoundName,
-        snow: config.snowSoundName,
-        stone: config.stoneSoundName,
-        water: config.waterSoundName,
-        wood: config.woodSoundName,
-    };
+  const TerrainSound = {
+    dirt: config.dirtSoundName,
+    snow: config.snowSoundName,
+    stone: config.stoneSoundName,
+    water: config.waterSoundName,
+    wood: config.woodSoundName,
+  };
 
-    const REQUEST_SOUND = {
-        SOUND_NAME: 0,
-        MIN: 1,
-        MAX: 2,
-    };
+  const REQUEST_SOUND = {
+    SOUND_NAME: 0,
+    MIN: 1,
+    MAX: 2,
+  };
 
-    const TerrainKeyMap = {
-        1: "dirt",
-        2: "snow",
-        3: "stone",
-        4: "water",
-        5: "wood",
-    };
+  const TerrainKeyMap = {
+    1: "dirt",
+    2: "snow",
+    3: "stone",
+    4: "water",
+    5: "wood",
+  };
+
+  /**
+   * this class is the Anonymous class for representing terrain tag.
+   * @class TerrainManager
+   * @type {{isRunning: Function}}
+   */
+  const TerrainManager = new (class {
+    constructor() {
+      this._init = false;
+      this._state = false;
+      this._steps = 0;
+      this._staticVolume = undefined;
+    }
+
+    setDirty(value) {
+      this._state = value;
+    }
+
+    initWithMembers() {
+      this._init = false;
+      this._state = false;
+      this._steps = 0;
+    }
+
+    isRunning() {
+      this.initWithMembers();
+
+      const tileset = $gameMap.tileset();
+
+      const lines = tileset.note.split(/[\r\n]+/);
+      const stepRegex = /<Step Sounds>/i;
+      lines.forEach((i) => {
+        const isStepSound = i.match(stepRegex);
+        if (isStepSound) {
+          this._init = true;
+          ConfigManager.save();
+        }
+      });
+    }
+
+    requestSound(type) {
+      const sound = TerrainSound[type];
+
+      const originalFileName = sound[REQUEST_SOUND.SOUND_NAME];
+      const min = sound[REQUEST_SOUND.MIN];
+      const max = sound[REQUEST_SOUND.MAX];
+
+      const index = ((1 + Math.random() * max) >> 0).clamp(min, max);
+      const vol = this.getSoundVolume();
+      const volRate = AudioManager.wavVolume / 100;
+
+      const targetWavFileName = "%1%2".format(originalFileName, index);
+      AudioManager.playWav(
+        targetWavFileName,
+        Math.floor(vol * volRate),
+        ".wav"
+      );
+    }
 
     /**
-     * this class is the Anonymous class for representing terrain tag.
-     * @class TerrainManager
-     * @type {{isRunning: Function}}
+     * if the persistent volume value is saved in the instance, it returns it just.
+     * this logic will save the CPU time pretty.
+     * @returns
      */
-    const TerrainManager = new (class {
-        constructor() {
-            this._init = false;
-            this._state = false;
-            this._steps = 0;
-            this._staticVolume = undefined;
+    getSoundVolume() {
+      if (this._staticVolume) {
+        return this._staticVolume;
+      }
+
+      // get the volume value between 30 and 40
+      const vol = (30 + Math.random() * 10) >> 0;
+
+      // set the persistent volume value.
+      this._staticVolume = vol;
+
+      return this._staticVolume;
+    }
+
+    isInit() {
+      return this._init && !!ConfigManager.stepSound;
+    }
+
+    playSound() {
+      const terrain = $gamePlayer.terrainTag();
+      if (!this._state) {
+        console.warn("the variable called 'state' is not defined");
+        return;
+      }
+
+      if (this.isInit()) {
+        // this switch statement is possible to convert with hash map.
+        // hash map is faster than switch statement.
+        // TODO: switch -> hash map
+        if (TerrainKeyMap[terrain]) {
+          this.requestSound(TerrainKeyMap[terrain]);
         }
+        this.setDirty(false);
+      }
+    }
 
-        setDirty(value) {
-            this._state = value;
-        }
+    update() {
+      const prevStepCount = this._steps;
+      const stepCount = $gameParty.steps();
+      const distance = this.getDistance();
 
-        initWithMembers() {
-            this._init = false;
-            this._state = false;
-            this._steps = 0;
-        }
+      if (this._state) {
+        if (stepCount === prevStepCount) this.playSound();
+      } else {
+        this._steps = stepCount + distance;
+        this.setDirty(true);
+      }
+    }
 
-        isRunning() {
-            this.initWithMembers();
+    getDistance() {
+      return config.stepInterval;
+    }
+  })();
 
-            const tileset = $gameMap.tileset();
+  const alias_Scene_Map_start = Scene_Map.prototype.start;
+  Scene_Map.prototype.start = function () {
+    alias_Scene_Map_start.call(this);
+    TerrainManager.isRunning();
+  };
 
-            const lines = tileset.note.split(/[\r\n]+/);
-            const stepRegex = /<Step Sounds>/i;
-            lines.forEach((i) => {
-                const isStepSound = i.match(stepRegex);
-                if (isStepSound) {
-                    this._init = true;
-                    ConfigManager.save();
-                }
-            });
-        }
+  //========================================================
+  // Frame Update
+  //========================================================
 
-        requestSound(type) {
-            const sound = TerrainSound[type];
+  const alias_Game_Map_update = Game_Map.prototype.update;
+  Game_Map.prototype.update = function (sceneActive) {
+    alias_Game_Map_update.call(this, sceneActive);
+    TerrainManager.update();
+  };
 
-            const originalFileName = sound[REQUEST_SOUND.SOUND_NAME];
-            const min = sound[REQUEST_SOUND.MIN];
-            const max = sound[REQUEST_SOUND.MAX];
+  //========================================================
+  // ConfigManager
+  //========================================================
 
-            const index = ((1 + Math.random() * max) >> 0).clamp(min, max);
-            const vol = this.getSoundVolume();
-            const volRate = AudioManager.wavVolume / 100;
+  ConfigManager.stepSound = true;
 
-            const targetWavFileName = "%1%2".format(originalFileName, index);
-            AudioManager.playWav(
-                targetWavFileName,
-                Math.floor(vol * volRate),
-                ".wav"
-            );
-        }
+  const alias_makeData = ConfigManager.makeData;
+  ConfigManager.makeData = function () {
+    const config = alias_makeData.call(this);
+    config.stepSound = ConfigManager.stepSound;
+    return config;
+  };
 
-        /**
-         * if the persistent volume value is saved in the instance, it returns it just.
-         * this logic will save the CPU time pretty.
-         * @returns
-         */
-        getSoundVolume() {
-            if (this._staticVolume) {
-                return this._staticVolume;
-            }
+  const alias_applyData = ConfigManager.applyData;
+  ConfigManager.applyData = function (config) {
+    alias_applyData.call(this, config);
+    const ret = config["stepSound"];
+    const temp = ConfigManager.stepSound;
+    if (ret !== undefined) {
+      this.stepSound = ret;
+    } else {
+      this.stepSound = temp;
+    }
+  };
 
-            // get the volume value between 30 and 40
-            const vol = (30 + Math.random() * 10) >> 0;
+  //========================================================
+  // Window_Options
+  //========================================================
 
-            // set the persistent volume value.
-            this._staticVolume = vol;
-
-            return this._staticVolume;
-        }
-
-        isInit() {
-            return this._init && !!ConfigManager.stepSound;
-        }
-
-        playSound() {
-            const terrain = $gamePlayer.terrainTag();
-            if (!this._state) {
-                console.warn("the variable called 'state' is not defined");
-                return;
-            }
-
-            if (this.isInit()) {
-                // this switch statement is possible to convert with hash map.
-                // hash map is faster than switch statement.
-                // TODO: switch -> hash map
-                if (TerrainKeyMap[terrain]) {
-                    this.requestSound(TerrainKeyMap[terrain]);
-                }
-                this.setDirty(false);
-            }
-        }
-
-        update() {
-            const prevStepCount = this._steps;
-            const stepCount = $gameParty.steps();
-            const distance = this.getDistance();
-
-            if (this._state) {
-                if (stepCount === prevStepCount) this.playSound();
-            } else {
-                this._steps = stepCount + distance;
-                this.setDirty(true);
-            }
-        }
-
-        getDistance() {
-            return config.stepInterval;
-        }
-    })();
-
-    const alias_Scene_Map_start = Scene_Map.prototype.start;
-    Scene_Map.prototype.start = function () {
-        alias_Scene_Map_start.call(this);
-        TerrainManager.isRunning();
-    };
-
-    //========================================================
-    // Frame Update
-    //========================================================
-
-    const alias_Game_Map_update = Game_Map.prototype.update;
-    Game_Map.prototype.update = function (sceneActive) {
-        alias_Game_Map_update.call(this, sceneActive);
-        TerrainManager.update();
-    };
-
-    //========================================================
-    // ConfigManager
-    //========================================================
-
-    ConfigManager.stepSound = true;
-
-    const alias_makeData = ConfigManager.makeData;
-    ConfigManager.makeData = function () {
-        const config = alias_makeData.call(this);
-        config.stepSound = ConfigManager.stepSound;
-        return config;
-    };
-
-    const alias_applyData = ConfigManager.applyData;
-    ConfigManager.applyData = function (config) {
-        alias_applyData.call(this, config);
-        const ret = config["stepSound"];
-        const temp = ConfigManager.stepSound;
-        if (ret !== undefined) {
-            this.stepSound = ret;
-        } else {
-            this.stepSound = temp;
-        }
-    };
-
-    //========================================================
-    // Window_Options
-    //========================================================
-
-    const alias_addVolumeOptions = Window_Options.prototype.addGeneralOptions;
-    Window_Options.prototype.addGeneralOptions = function () {
-        alias_addVolumeOptions.call(this);
-        this.addCommand(config.symbolName, "stepSound");
-    };
+  const alias_addVolumeOptions = Window_Options.prototype.addGeneralOptions;
+  Window_Options.prototype.addGeneralOptions = function () {
+    alias_addVolumeOptions.call(this);
+    this.addCommand(config.symbolName, "stepSound");
+  };
 })();

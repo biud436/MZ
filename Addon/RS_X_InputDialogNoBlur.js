@@ -16,31 +16,30 @@
  */
 
 (() => {
-    SceneManager._backgroundBitmapWithoutBlur = null;
+  SceneManager._backgroundBitmapWithoutBlur = null;
 
-    SceneManager.snapForBackgroundWithout = function () {
-        if (this._backgroundBitmapWithoutBlur) {
-            this._backgroundBitmapWithoutBlur.destroy();
-        }
-        this._backgroundBitmapWithoutBlur = this.snap();
-    };
+  SceneManager.snapForBackgroundWithout = function () {
+    if (this._backgroundBitmapWithoutBlur) {
+      this._backgroundBitmapWithoutBlur.destroy();
+    }
+    this._backgroundBitmapWithoutBlur = this.snap();
+  };
 
-    SceneManager.backgroundBitmapWithoutBlur = function () {
-        return this._backgroundBitmapWithoutBlur;
-    };
+  SceneManager.backgroundBitmapWithoutBlur = function () {
+    return this._backgroundBitmapWithoutBlur;
+  };
 
-    const alias_Scene_Map_terminate = Scene_Map.prototype.terminate;
-    Scene_Map.prototype.terminate = function () {
-        if (SceneManager.isNextScene(Scene_InputDialog)) {
-            SceneManager.snapForBackgroundWithout();
-        }
-        alias_Scene_Map_terminate.call(this);
-    };
+  const alias_Scene_Map_terminate = Scene_Map.prototype.terminate;
+  Scene_Map.prototype.terminate = function () {
+    if (SceneManager.isNextScene(Scene_InputDialog)) {
+      SceneManager.snapForBackgroundWithout();
+    }
+    alias_Scene_Map_terminate.call(this);
+  };
 
-    Scene_InputDialog.prototype.createBackground = function () {
-        this._backgroundSprite = new Sprite();
-        this._backgroundSprite.bitmap =
-            SceneManager.backgroundBitmapWithoutBlur();
-        this.addChild(this._backgroundSprite);
-    };
+  Scene_InputDialog.prototype.createBackground = function () {
+    this._backgroundSprite = new Sprite();
+    this._backgroundSprite.bitmap = SceneManager.backgroundBitmapWithoutBlur();
+    this.addChild(this._backgroundSprite);
+  };
 })();

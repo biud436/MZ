@@ -13,6 +13,70 @@
  *
  * @help
  * ===============================================================
+ * Detailed Description
+ * ===============================================================
+ * This plugin implements a dynamic lighting system that follows the player
+ * character, creating an immersive lighting effect in your RPG Maker MZ games.
+ * The light source automatically follows the player and adjusts its direction
+ * based on the player's facing direction.
+ *
+ * ===============================================================
+ * Features
+ * ===============================================================
+ * - Dynamic light that follows the player character
+ * - Light automatically adjusts based on player's direction
+ * - Customizable light size/intensity
+ * - Customizable light color (through script calls)
+ * - Simple enable/disable commands
+ *
+ * ===============================================================
+ * Plugin Commands (MZ)
+ * ===============================================================
+ * This plugin provides two simple commands:
+ *
+ * 1. Enable - Turns on the lighting effect
+ * 2. Disable - Turns off the lighting effect
+ *
+ * ===============================================================
+ * Script Calls
+ * ===============================================================
+ * You can use the following script calls to control the light effect:
+ *
+ * // Enable/Disable Light
+ * $gameSystem.setLightProperty("light", true);  // Enable
+ * $gameSystem.setLightProperty("light", false); // Disable
+ *
+ * // Adjust Light Size (values between 0.001 and 1.0)
+ * // Smaller values create larger light areas
+ * $gameSystem.setLightProperty("size", 0.5);
+ *
+ * // Change Light Color (using script calls)
+ * // Get the filter first
+ * const filter = SceneManager._scene._spriteset._simpleLightFilter;
+ *
+ * // Set to default white light
+ * filter.setDefaultColorTone();
+ *
+ * // Set to red light
+ * filter.setRedColorTone();
+ *
+ * // Set to custom color (RGB values, 0-255)
+ * filter.setColorTone(255, 180, 120); // Warm orange light
+ *
+ * ===============================================================
+ * Technical Notes
+ * ===============================================================
+ * - The plugin uses PIXI.js filters and WebGL shaders to create the lighting effect
+ * - Light automatically adjusts to screen resolution
+ * - Performance impact is minimal on most systems
+ * - Compatible with most other plugins
+ *
+ * ===============================================================
+ * Compatibility
+ * ===============================================================
+ * This plugin is compatible with RPG Maker MZ v1.5.0 and higher.
+ * For RPG Maker MV, use versions prior to v2.0.0.
+ * ===============================================================
  * Version Log
  * ===============================================================
  * 2016.02.13 (v1.0.0) - First Release
@@ -33,31 +97,31 @@
  */
 
 (() => {
-    "use strict";
+  "use strict";
 
-    let parameters = $plugins.filter(function (i) {
-        return i.description.contains("<RS_SimpleLight>");
-    });
+  let parameters = $plugins.filter(function (i) {
+    return i.description.contains("<RS_SimpleLight>");
+  });
 
-    // eslint-disable-next-line no-unused-vars
-    parameters = parameters.length > 0 && parameters[0].parameters;
+  // eslint-disable-next-line no-unused-vars
+  parameters = parameters.length > 0 && parameters[0].parameters;
 
-    PIXI.SimpleLightFilter = function () {
-        const vertexSrc = [
-            "attribute vec2 aVertexPosition;",
-            "attribute vec2 aTextureCoord;",
+  PIXI.SimpleLightFilter = function () {
+    const vertexSrc = [
+      "attribute vec2 aVertexPosition;",
+      "attribute vec2 aTextureCoord;",
 
-            "uniform mat3 projectionMatrix;",
+      "uniform mat3 projectionMatrix;",
 
-            "varying vec2 vTextureCoord;",
+      "varying vec2 vTextureCoord;",
 
-            "void main(void){",
-            "    gl_Position = vec4((projectionMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);",
-            "    vTextureCoord = aTextureCoord;",
-            "}",
-        ].join("\n");
+      "void main(void){",
+      "    gl_Position = vec4((projectionMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);",
+      "    vTextureCoord = aTextureCoord;",
+      "}",
+    ].join("\n");
 
-        const fragmentSrc = `
+    const fragmentSrc = `
     
     precision mediump float;
     
@@ -137,208 +201,204 @@
     
     `;
 
-        PIXI.Filter.call(this, vertexSrc, fragmentSrc, {
-            u_resolution: [Graphics.width, Graphics.height],
-            u_dir: 2,
-            u_size: 1.628,
-            u_position: [0.5, 0.5],
-            u_color: [
-                1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
-                0.0, 0.0, 1.0,
-            ],
-        });
+    PIXI.Filter.call(this, vertexSrc, fragmentSrc, {
+      u_resolution: [Graphics.width, Graphics.height],
+      u_dir: 2,
+      u_size: 1.628,
+      u_position: [0.5, 0.5],
+      u_color: [
+        1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0,
+      ],
+    });
 
-        this.enabled = true;
-        this.resolution = 1;
-        this.legacy = true;
-    };
+    this.enabled = true;
+    this.resolution = 1;
+    this.legacy = true;
+  };
 
-    PIXI.SimpleLightFilter.prototype = Object.create(PIXI.Filter.prototype);
-    PIXI.SimpleLightFilter.prototype.constructor = PIXI.SimpleLightFilter;
+  PIXI.SimpleLightFilter.prototype = Object.create(PIXI.Filter.prototype);
+  PIXI.SimpleLightFilter.prototype.constructor = PIXI.SimpleLightFilter;
 
-    PIXI.SimpleLightFilter.prototype.updatePositionX = function () {
-        const value = $gamePlayer.screenX() / this.uniforms.u_resolution[0];
-        this.uniforms.u_position[0] = value || 0.0;
-    };
+  PIXI.SimpleLightFilter.prototype.updatePositionX = function () {
+    const value = $gamePlayer.screenX() / this.uniforms.u_resolution[0];
+    this.uniforms.u_position[0] = value || 0.0;
+  };
 
-    PIXI.SimpleLightFilter.prototype.updatePositionY = function () {
-        const value = $gamePlayer.screenY() / this.uniforms.u_resolution[1];
-        this.uniforms.u_position[1] = value || 0.0;
-    };
+  PIXI.SimpleLightFilter.prototype.updatePositionY = function () {
+    const value = $gamePlayer.screenY() / this.uniforms.u_resolution[1];
+    this.uniforms.u_position[1] = value || 0.0;
+  };
 
-    PIXI.SimpleLightFilter.prototype.updatePosition = function () {
-        this.updatePositionX();
-        this.updatePositionY();
-    };
+  PIXI.SimpleLightFilter.prototype.updatePosition = function () {
+    this.updatePositionX();
+    this.updatePositionY();
+  };
 
-    PIXI.SimpleLightFilter.prototype.setResolution = function (options) {
-        this.uniforms.u_resolution = options;
-    };
+  PIXI.SimpleLightFilter.prototype.setResolution = function (options) {
+    this.uniforms.u_resolution = options;
+  };
 
-    PIXI.SimpleLightFilter.prototype.setDirection = function (dir) {
-        this.uniforms.u_dir = dir;
-    };
+  PIXI.SimpleLightFilter.prototype.setDirection = function (dir) {
+    this.uniforms.u_dir = dir;
+  };
 
-    PIXI.SimpleLightFilter.prototype.setSize = function (value) {
-        if (value <= 1e-3) value = 1e-3;
-        if (value >= 1.0) value = 1.0;
-        this.uniforms.u_size = value;
-    };
+  PIXI.SimpleLightFilter.prototype.setSize = function (value) {
+    if (value <= 1e-3) value = 1e-3;
+    if (value >= 1.0) value = 1.0;
+    this.uniforms.u_size = value;
+  };
 
-    PIXI.SimpleLightFilter.prototype.setDefaultColorTone = function () {
-        this.uniforms.u_color = [
-            1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
-            0.0, 0.0, 1.0,
-        ];
-    };
+  PIXI.SimpleLightFilter.prototype.setDefaultColorTone = function () {
+    this.uniforms.u_color = [
+      1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+      1.0,
+    ];
+  };
 
-    PIXI.SimpleLightFilter.prototype.setRedColorTone = function () {
-        this.uniforms.u_color = [
-            0.8, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-            0.0, 0.0, 1.0,
-        ];
-    };
+  PIXI.SimpleLightFilter.prototype.setRedColorTone = function () {
+    this.uniforms.u_color = [
+      0.8, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+      1.0,
+    ];
+  };
 
-    /**
-     * @param {Array} color
-     */
-    PIXI.SimpleLightFilter.prototype.setColorTone = function (
-        red,
-        green,
-        blue
-    ) {
-        const r = parseFloat(red / 255.0);
-        const g = parseFloat(green / 255.0);
-        const b = parseFloat(blue / 255.0);
+  /**
+   * @param {Array} color
+   */
+  PIXI.SimpleLightFilter.prototype.setColorTone = function (red, green, blue) {
+    const r = parseFloat(red / 255.0);
+    const g = parseFloat(green / 255.0);
+    const b = parseFloat(blue / 255.0);
 
-        this.uniforms.u_color = [
-            r,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            g,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            b,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            1.0,
-        ];
-    };
+    this.uniforms.u_color = [
+      r,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      g,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      b,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+    ];
+  };
 
-    //=================================================================
-    // Spriteset_Map
-    //=================================================================
+  //=================================================================
+  // Spriteset_Map
+  //=================================================================
 
-    const alias_Spriteset_Map_createUpperLayer =
-        Spriteset_Map.prototype.createUpperLayer;
-    Spriteset_Map.prototype.createUpperLayer = function () {
-        alias_Spriteset_Map_createUpperLayer.call(this);
-        this.createSimpleLightFilter();
-    };
+  const alias_Spriteset_Map_createUpperLayer =
+    Spriteset_Map.prototype.createUpperLayer;
+  Spriteset_Map.prototype.createUpperLayer = function () {
+    alias_Spriteset_Map_createUpperLayer.call(this);
+    this.createSimpleLightFilter();
+  };
 
-    Spriteset_Map.prototype.createSimpleLightFilter = function () {
-        const isValid = this._simpleLightFilter;
-        const target = this._baseSprite;
+  Spriteset_Map.prototype.createSimpleLightFilter = function () {
+    const isValid = this._simpleLightFilter;
+    const target = this._baseSprite;
 
-        if (!isValid) {
-            this._simpleLightFilter = new PIXI.SimpleLightFilter();
-            if (!target.filters) {
-                target.filters = [];
-            }
-            target.filters = [this._simpleLightFilter].concat(target.filters);
-            if (this._simpleLightFilter) {
-                this._simpleLightFilter.updatePosition();
-            }
-        } else {
-            if (!target.filters) {
-                target.filters = [];
-            }
-            target.filters = target.filters.filter(function (filter) {
-                return filter !== isValid;
-            }, this);
-        }
-    };
-
-    const alias_Spriteset_Map_update = Spriteset_Map.prototype.update;
-    Spriteset_Map.prototype.update = function () {
-        alias_Spriteset_Map_update.call(this);
-        this.updateSimpleLightFilter();
-    };
-
-    Spriteset_Map.prototype.updateSimpleLightFilter = function () {
-        if (!$gameSystem) return;
-        if (!this._simpleLightFilter) return;
-        const config = $gameSystem._lightProp;
-        const isValid = $gameSystem.enabledLight();
-        this._simpleLightFilter.enabled = isValid;
-        if (isValid) {
-            this._simpleLightFilter.updatePosition();
-            this._simpleLightFilter.setSize(config["size"]);
-            this._simpleLightFilter.setDirection(config["direction"]);
-            this._simpleLightFilter.setResolution(config["resolution"]);
-        }
-    };
-
-    // Game_System
-
-    const alias_Game_System_initialize = Game_System.prototype.initialize;
-    Game_System.prototype.initialize = function () {
-        alias_Game_System_initialize.call(this);
-        this.initLightProperty();
-    };
-
-    Game_System.prototype.initLightProperty = function () {
-        this._lightProp = {
-            light: false,
-            size: 1.618,
-            direction: 2,
-            resolution: [816, 624],
-        };
-    };
-
-    Game_System.prototype.updateLightProperty = function () {
-        if (!this._lightProp) this.initLightProperty();
-        this.setLightProperty("direction", $gamePlayer.direction());
-        this.setLightProperty("resolution", [Graphics.width, Graphics.height]);
-    };
-
-    Game_System.prototype.setLightProperty = function (name, value) {
-        if (!this._lightProp) this.initLightProperty();
-        this._lightProp[name] = value;
-        return this._lightProp[name];
-    };
-
-    Game_System.prototype.enabledLight = function () {
-        if (!this._lightProp) this.initLightProperty();
-        return this._lightProp["light"] === true;
-    };
-
-    const alias_Game_Map_update = Game_Map.prototype.update;
-    Game_Map.prototype.update = function (sceneActive) {
-        alias_Game_Map_update.call(this, sceneActive);
-        $gameSystem.updateLightProperty();
-    };
-
-    // pluginCommands
-
-    const pluginCommands = {
-        enable() {
-            $gameSystem.setLightProperty("light", true);
-        },
-
-        disable() {
-            $gameSystem.setLightProperty("light", false);
-        },
-    };
-
-    const pluginName = "RS_SimpleLight";
-    for (const name in pluginCommands) {
-        PluginManager.registerCommand(pluginName, name, pluginCommands[name]);
+    if (!isValid) {
+      this._simpleLightFilter = new PIXI.SimpleLightFilter();
+      if (!target.filters) {
+        target.filters = [];
+      }
+      target.filters = [this._simpleLightFilter].concat(target.filters);
+      if (this._simpleLightFilter) {
+        this._simpleLightFilter.updatePosition();
+      }
+    } else {
+      if (!target.filters) {
+        target.filters = [];
+      }
+      target.filters = target.filters.filter(function (filter) {
+        return filter !== isValid;
+      }, this);
     }
+  };
+
+  const alias_Spriteset_Map_update = Spriteset_Map.prototype.update;
+  Spriteset_Map.prototype.update = function () {
+    alias_Spriteset_Map_update.call(this);
+    this.updateSimpleLightFilter();
+  };
+
+  Spriteset_Map.prototype.updateSimpleLightFilter = function () {
+    if (!$gameSystem) return;
+    if (!this._simpleLightFilter) return;
+    const config = $gameSystem._lightProp;
+    const isValid = $gameSystem.enabledLight();
+    this._simpleLightFilter.enabled = isValid;
+    if (isValid) {
+      this._simpleLightFilter.updatePosition();
+      this._simpleLightFilter.setSize(config["size"]);
+      this._simpleLightFilter.setDirection(config["direction"]);
+      this._simpleLightFilter.setResolution(config["resolution"]);
+    }
+  };
+
+  // Game_System
+
+  const alias_Game_System_initialize = Game_System.prototype.initialize;
+  Game_System.prototype.initialize = function () {
+    alias_Game_System_initialize.call(this);
+    this.initLightProperty();
+  };
+
+  Game_System.prototype.initLightProperty = function () {
+    this._lightProp = {
+      light: false,
+      size: 1.618,
+      direction: 2,
+      resolution: [816, 624],
+    };
+  };
+
+  Game_System.prototype.updateLightProperty = function () {
+    if (!this._lightProp) this.initLightProperty();
+    this.setLightProperty("direction", $gamePlayer.direction());
+    this.setLightProperty("resolution", [Graphics.width, Graphics.height]);
+  };
+
+  Game_System.prototype.setLightProperty = function (name, value) {
+    if (!this._lightProp) this.initLightProperty();
+    this._lightProp[name] = value;
+    return this._lightProp[name];
+  };
+
+  Game_System.prototype.enabledLight = function () {
+    if (!this._lightProp) this.initLightProperty();
+    return this._lightProp["light"] === true;
+  };
+
+  const alias_Game_Map_update = Game_Map.prototype.update;
+  Game_Map.prototype.update = function (sceneActive) {
+    alias_Game_Map_update.call(this, sceneActive);
+    $gameSystem.updateLightProperty();
+  };
+
+  // pluginCommands
+
+  const pluginCommands = {
+    enable() {
+      $gameSystem.setLightProperty("light", true);
+    },
+
+    disable() {
+      $gameSystem.setLightProperty("light", false);
+    },
+  };
+
+  const pluginName = "RS_SimpleLight";
+  for (const name in pluginCommands) {
+    PluginManager.registerCommand(pluginName, name, pluginCommands[name]);
+  }
 })();

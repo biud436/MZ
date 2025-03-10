@@ -101,48 +101,46 @@
  */
 
 (() => {
-    "use strict";
+  "use strict";
 
-    const pluginParams = $plugins.filter((i) => {
-        return i.description.contains("<RS_GhostEffect>");
-    });
+  const pluginParams = $plugins.filter((i) => {
+    return i.description.contains("<RS_GhostEffect>");
+  });
 
-    const pluginName = pluginParams.length > 0 && pluginParams[0].name;
-    const parameters = pluginParams.length > 0 && pluginParams[0].parameters;
+  const pluginName = pluginParams.length > 0 && pluginParams[0].name;
+  const parameters = pluginParams.length > 0 && pluginParams[0].parameters;
 
-    const RS = window.RS || RS;
-    RS.GhostEffect = {
-        Params: {},
-    };
+  const RS = window.RS || RS;
+  RS.GhostEffect = {
+    Params: {},
+  };
 
-    RS.GhostEffect.Params = RS.GhostEffect.Params || {};
+  RS.GhostEffect.Params = RS.GhostEffect.Params || {};
 
-    RS.GhostEffect.Params.lifeTime = parseInt(parameters["lifeTime"] || 100);
-    RS.GhostEffect.Params.threshold = parseFloat(
-        parameters["threshold"] || 0.7
-    );
-    RS.GhostEffect.Params.xoffset = parseFloat(parameters["xoffset"] || 0.07);
+  RS.GhostEffect.Params.lifeTime = parseInt(parameters["lifeTime"] || 100);
+  RS.GhostEffect.Params.threshold = parseFloat(parameters["threshold"] || 0.7);
+  RS.GhostEffect.Params.xoffset = parseFloat(parameters["xoffset"] || 0.07);
 
-    //============================================================================
-    // PIXI.GhostEffect
-    //============================================================================
+  //============================================================================
+  // PIXI.GhostEffect
+  //============================================================================
 
-    PIXI.GhostEffect = function () {
-        const vertexSrc = [
-            "attribute vec2 aVertexPosition;",
-            "attribute vec2 aTextureCoord;",
+  PIXI.GhostEffect = function () {
+    const vertexSrc = [
+      "attribute vec2 aVertexPosition;",
+      "attribute vec2 aTextureCoord;",
 
-            "uniform mat3 projectionMatrix;",
+      "uniform mat3 projectionMatrix;",
 
-            "varying vec2 vTextureCoord;",
+      "varying vec2 vTextureCoord;",
 
-            "void main(void){",
-            "    gl_Position = vec4((projectionMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);",
-            "    vTextureCoord = aTextureCoord;",
-            "}",
-        ].join("\n");
+      "void main(void){",
+      "    gl_Position = vec4((projectionMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);",
+      "    vTextureCoord = aTextureCoord;",
+      "}",
+    ].join("\n");
 
-        const fragmentSrc = `
+    const fragmentSrc = `
         
         precision mediump float;
         
@@ -173,188 +171,186 @@
         }
         `;
 
-        PIXI.Filter.call(this, vertexSrc, fragmentSrc, {
-            dimensions: new Float32Array(2),
-            u_scale: [0.5, 0.5],
-            u_xoffset: 0.07,
-        });
+    PIXI.Filter.call(this, vertexSrc, fragmentSrc, {
+      dimensions: new Float32Array(2),
+      u_scale: [0.5, 0.5],
+      u_xoffset: 0.07,
+    });
 
-        this._effectVal = 0;
+    this._effectVal = 0;
 
-        this._time = performance.now();
+    this._time = performance.now();
 
-        this.enabled = true;
-        this.resolution = 1;
-        this.legacy = true;
-    };
+    this.enabled = true;
+    this.resolution = 1;
+    this.legacy = true;
+  };
 
-    PIXI.GhostEffect.prototype = Object.create(PIXI.Filter.prototype);
-    PIXI.GhostEffect.prototype.constructor = PIXI.GhostEffect;
+  PIXI.GhostEffect.prototype = Object.create(PIXI.Filter.prototype);
+  PIXI.GhostEffect.prototype.constructor = PIXI.GhostEffect;
 
-    PIXI.GhostEffect.prototype.apply = function (
-        filterManager,
-        input,
-        output,
-        clear
-    ) {
-        this.uniforms.dimensions[0] = input.sourceFrame.width;
-        this.uniforms.dimensions[1] = input.sourceFrame.height;
+  PIXI.GhostEffect.prototype.apply = function (
+    filterManager,
+    input,
+    output,
+    clear
+  ) {
+    this.uniforms.dimensions[0] = input.sourceFrame.width;
+    this.uniforms.dimensions[1] = input.sourceFrame.height;
 
-        filterManager.applyFilter(this, input, output, clear);
-    };
+    filterManager.applyFilter(this, input, output, clear);
+  };
 
-    PIXI.GhostEffect.prototype.updateEffect = function () {
-        const isInvalidUpdateEffect =
-            performance.now() - this._time < RS.GhostEffect.Params.lifeTime;
-        if (isInvalidUpdateEffect) return;
+  PIXI.GhostEffect.prototype.updateEffect = function () {
+    const isInvalidUpdateEffect =
+      performance.now() - this._time < RS.GhostEffect.Params.lifeTime;
+    if (isInvalidUpdateEffect) return;
 
-        this._effectVal = Math.random();
+    this._effectVal = Math.random();
 
-        if (this._effectVal > RS.GhostEffect.Params.threshold) {
-            this._effectVal = RS.GhostEffect.Params.threshold;
-        }
-        this.uniforms.u_scale[0] = this._effectVal;
-        this.uniforms.u_scale[1] = this._effectVal;
-        this.uniforms.u_xoffset = RS.GhostEffect.Params.xoffset;
+    if (this._effectVal > RS.GhostEffect.Params.threshold) {
+      this._effectVal = RS.GhostEffect.Params.threshold;
+    }
+    this.uniforms.u_scale[0] = this._effectVal;
+    this.uniforms.u_scale[1] = this._effectVal;
+    this.uniforms.u_xoffset = RS.GhostEffect.Params.xoffset;
 
-        this._time = performance.now();
-    };
+    this._time = performance.now();
+  };
 
-    //============================================================================
-    // Game_CharacterBase
-    //============================================================================
+  //============================================================================
+  // Game_CharacterBase
+  //============================================================================
 
-    const alias_Game_CharacterBase_initMembers =
-        Game_CharacterBase.prototype.initMembers;
-    Game_CharacterBase.prototype.initMembers = function () {
-        alias_Game_CharacterBase_initMembers.call(this);
-        this._isGhost = false;
-    };
+  const alias_Game_CharacterBase_initMembers =
+    Game_CharacterBase.prototype.initMembers;
+  Game_CharacterBase.prototype.initMembers = function () {
+    alias_Game_CharacterBase_initMembers.call(this);
+    this._isGhost = false;
+  };
 
-    Game_CharacterBase.prototype.isGhost = function () {
-        return this._isGhost;
-    };
+  Game_CharacterBase.prototype.isGhost = function () {
+    return this._isGhost;
+  };
 
-    Game_CharacterBase.prototype.ghostModeOn = function () {
-        this._isGhost = true;
-    };
+  Game_CharacterBase.prototype.ghostModeOn = function () {
+    this._isGhost = true;
+  };
 
-    Game_CharacterBase.prototype.ghostModeOff = function () {
-        this._isGhost = false;
-    };
+  Game_CharacterBase.prototype.ghostModeOff = function () {
+    this._isGhost = false;
+  };
 
-    Game_Player.prototype.ghostModeOn = function () {
-        this._isGhost = true;
-        this._followers.forEach((follower) => {
-            follower.ghostModeOn();
-        });
-    };
+  Game_Player.prototype.ghostModeOn = function () {
+    this._isGhost = true;
+    this._followers.forEach((follower) => {
+      follower.ghostModeOn();
+    });
+  };
 
-    Game_Player.prototype.ghostModeOff = function () {
-        this._isGhost = false;
-        this._followers.forEach((follower) => {
-            follower.ghostModeOff();
-        });
-    };
+  Game_Player.prototype.ghostModeOff = function () {
+    this._isGhost = false;
+    this._followers.forEach((follower) => {
+      follower.ghostModeOff();
+    });
+  };
 
-    //============================================================================
-    // Sprite_Character
-    //============================================================================
+  //============================================================================
+  // Sprite_Character
+  //============================================================================
 
-    const alias_Sprite_Character_initialize =
-        Sprite_Character.prototype.initialize;
-    Sprite_Character.prototype.initialize = function (character) {
-        alias_Sprite_Character_initialize.call(this, character);
-        this.createGhostEffect();
-    };
+  const alias_Sprite_Character_initialize =
+    Sprite_Character.prototype.initialize;
+  Sprite_Character.prototype.initialize = function (character) {
+    alias_Sprite_Character_initialize.call(this, character);
+    this.createGhostEffect();
+  };
 
-    const alias_Sprite_Character_update = Sprite_Character.prototype.update;
-    Sprite_Character.prototype.update = function () {
-        alias_Sprite_Character_update.call(this);
-        this.updateGhostEffect();
-    };
+  const alias_Sprite_Character_update = Sprite_Character.prototype.update;
+  Sprite_Character.prototype.update = function () {
+    alias_Sprite_Character_update.call(this);
+    this.updateGhostEffect();
+  };
 
-    Sprite_Character.prototype.createGhostEffect = function () {
-        const isValid = this._GhostEffect;
+  Sprite_Character.prototype.createGhostEffect = function () {
+    const isValid = this._GhostEffect;
 
-        if (!isValid) {
-            this._GhostEffect = new PIXI.GhostEffect();
-            if (!this.filters) {
-                this.filters = [];
-            }
-            this.filters = [this._GhostEffect].concat(this.filters);
-        } else {
-            if (!this.filters) {
-                this.filters = [];
-            }
-            this.filters = this.filters.filter(function (filter) {
-                return filter !== isValid;
-            }, this);
-        }
-    };
+    if (!isValid) {
+      this._GhostEffect = new PIXI.GhostEffect();
+      if (!this.filters) {
+        this.filters = [];
+      }
+      this.filters = [this._GhostEffect].concat(this.filters);
+    } else {
+      if (!this.filters) {
+        this.filters = [];
+      }
+      this.filters = this.filters.filter(function (filter) {
+        return filter !== isValid;
+      }, this);
+    }
+  };
 
-    Sprite_Character.prototype.updateGhostEffect = function () {
-        if (!$gameSystem) return;
-        if (!this._GhostEffect) return;
-        if (!this._character) return;
-        const isValid = this._character.isGhost();
-        this._GhostEffect.enabled = isValid;
-        if (isValid) {
-            this._GhostEffect.updateEffect();
-        }
-    };
+  Sprite_Character.prototype.updateGhostEffect = function () {
+    if (!$gameSystem) return;
+    if (!this._GhostEffect) return;
+    if (!this._character) return;
+    const isValid = this._character.isGhost();
+    this._GhostEffect.enabled = isValid;
+    if (isValid) {
+      this._GhostEffect.updateEffect();
+    }
+  };
 
-    const alias_Game_Interpreter_pluginCommand =
-        Game_Interpreter.prototype.pluginCommand;
-    Game_Interpreter.prototype.pluginCommand = function (command, args) {
-        alias_Game_Interpreter_pluginCommand.call(this, command, args);
-        if (command === "GhostEffect") {
-            switch (args[0]) {
-                case "lifetime":
-                    RS.GhostEffect.Params.lifeTime = Number(args[1] || 100);
-                    break;
-                case "threshold":
-                    RS.GhostEffect.Params.threshold = parseFloat(
-                        args[1] || 0.7
-                    );
-                    break;
-                case "xoffset":
-                    RS.GhostEffect.Params.xoffset = parseFloat(args[1] || 0.07);
-                    break;
-            }
-        }
-    };
+  const alias_Game_Interpreter_pluginCommand =
+    Game_Interpreter.prototype.pluginCommand;
+  Game_Interpreter.prototype.pluginCommand = function (command, args) {
+    alias_Game_Interpreter_pluginCommand.call(this, command, args);
+    if (command === "GhostEffect") {
+      switch (args[0]) {
+        case "lifetime":
+          RS.GhostEffect.Params.lifeTime = Number(args[1] || 100);
+          break;
+        case "threshold":
+          RS.GhostEffect.Params.threshold = parseFloat(args[1] || 0.7);
+          break;
+        case "xoffset":
+          RS.GhostEffect.Params.xoffset = parseFloat(args[1] || 0.07);
+          break;
+      }
+    }
+  };
 
-    PluginManager.registerCommand(
-        pluginName,
-        "lifetime",
-        /**
-         * @param {{value: number}} args
-         */
-        (args) => {
-            RS.GhostEffect.Params.lifeTime = Number(args.value || 100);
-        }
-    );
+  PluginManager.registerCommand(
+    pluginName,
+    "lifetime",
+    /**
+     * @param {{value: number}} args
+     */
+    (args) => {
+      RS.GhostEffect.Params.lifeTime = Number(args.value || 100);
+    }
+  );
 
-    PluginManager.registerCommand(
-        pluginName,
-        "threshold",
-        /**
-         * @param {{value: number}} args
-         */
-        (args) => {
-            RS.GhostEffect.Params.threshold = parseFloat(args.value || 0.7);
-        }
-    );
+  PluginManager.registerCommand(
+    pluginName,
+    "threshold",
+    /**
+     * @param {{value: number}} args
+     */
+    (args) => {
+      RS.GhostEffect.Params.threshold = parseFloat(args.value || 0.7);
+    }
+  );
 
-    PluginManager.registerCommand(
-        pluginName,
-        "xoffset",
-        /**
-         * @param {{value: number}} args
-         */
-        (args) => {
-            RS.GhostEffect.Params.xoffset = parseFloat(args.value || 0.07);
-        }
-    );
+  PluginManager.registerCommand(
+    pluginName,
+    "xoffset",
+    /**
+     * @param {{value: number}} args
+     */
+    (args) => {
+      RS.GhostEffect.Params.xoffset = parseFloat(args.value || 0.07);
+    }
+  );
 })(RS.GhostEffect);

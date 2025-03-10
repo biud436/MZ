@@ -1273,1650 +1273,1609 @@ var $gameHud = null;
 var RS = RS || {};
 
 (() => {
-    "use strict";
+  "use strict";
 
-    const pluginParams = $plugins.filter((i) => {
-        return i.description.contains("<RS_HUD_4m>");
-    });
+  const pluginParams = $plugins.filter((i) => {
+    return i.description.contains("<RS_HUD_4m>");
+  });
 
-    const pluginName = pluginParams.length > 0 && pluginParams[0].name;
-    const parameters = pluginParams.length > 0 && pluginParams[0].parameters;
+  const pluginName = pluginParams.length > 0 && pluginParams[0].name;
+  const parameters = pluginParams.length > 0 && pluginParams[0].parameters;
 
-    RS.HUD = {};
-    RS.HUD.param = RS.HUD.param || {};
+  RS.HUD = {};
+  RS.HUD.param = RS.HUD.param || {};
 
-    Object.assign(RS.HUD, {
-        // Image Position
-        loadImagePosition(szRE) {
-            const target = szRE.match(/(.*),(.*),(.*)/i);
-            const x = parseFloat(RegExp.$1);
-            const y = parseFloat(RegExp.$2);
-            const visible = Boolean(String(RegExp.$3).contains("true"));
-            return {
-                x: x,
-                y: y,
-                visible: visible,
-            };
+  Object.assign(RS.HUD, {
+    // Image Position
+    loadImagePosition(szRE) {
+      const target = szRE.match(/(.*),(.*),(.*)/i);
+      const x = parseFloat(RegExp.$1);
+      const y = parseFloat(RegExp.$2);
+      const visible = Boolean(String(RegExp.$3).contains("true"));
+      return {
+        x: x,
+        y: y,
+        visible: visible,
+      };
+    },
+
+    loadRealNumber(paramName, val) {
+      let value = Number(parameters[paramName]);
+      switch (typeof value) {
+        case "object":
+        case "undefined":
+          value = val;
+          break;
+      }
+      return value;
+    },
+  });
+
+  Object.assign(RS.HUD.param, {
+    imgEXP: String(parameters["EXP Gauge"] || "exr"),
+    imgEmptyGauge: String(parameters["Empty Gauge"] || "gauge"),
+    imgHP: String(parameters["HP Gauge"] || "hp"),
+    imgMP: String(parameters["MP Gauge"] || "mp"),
+    imgEmptyHUD: String(parameters["HUD Background"] || "hud_window_empty"),
+    imgMasking: String(parameters["Masking"] || "masking"),
+
+    ptFace: RS.HUD.loadImagePosition(
+      parameters["Face Position"] || "0, 0, true"
+    ),
+    ptHP: RS.HUD.loadImagePosition(
+      parameters["HP Position"] || "160, 43, true"
+    ),
+    ptMP: RS.HUD.loadImagePosition(
+      parameters["MP Position"] || "160, 69, true"
+    ),
+    ptEXP: RS.HUD.loadImagePosition(
+      parameters["EXP Position"] || "83, 91, true"
+    ),
+    ptHPText: RS.HUD.loadImagePosition(
+      parameters["HP Text Position"] || "160, 53, true"
+    ),
+    ptMPText: RS.HUD.loadImagePosition(
+      parameters["MP Text Position"] || "160, 79, true"
+    ),
+    ptLevelText: RS.HUD.loadImagePosition(
+      parameters["Level Text Position"] || "60, 80, true"
+    ),
+    ptEXPText: RS.HUD.loadImagePosition(
+      parameters["EXP Text Position"] || "120.5, 93, true"
+    ),
+    ptNameText: RS.HUD.loadImagePosition(
+      parameters["Name Text Position"] || "54, 53, true"
+    ),
+
+    nWidth: RS.HUD.loadRealNumber("Width", 317),
+    nHeight: RS.HUD.loadRealNumber("Height", 101),
+    nPD: RS.HUD.loadRealNumber("Margin", 0),
+    blurProcessing: Boolean(parameters["Gaussian Blur"] === "true"),
+    bShow: Boolean(parameters["Show"] === "true"),
+    nOpacity: RS.HUD.loadRealNumber("Opacity", 255),
+    szAnchor: String(parameters["Anchor"] || "LeftTop"),
+    arrangement: eval(parameters["Arrangement"]),
+    preloadImportantFaces: eval(
+      parameters["preloadImportantFaces"] || "Actor1"
+    ),
+    battleOnly: Boolean(parameters["Battle Only"] === "true"),
+    showComma: Boolean(parameters["Show Comma"] === "true"),
+    maxExpText: String(parameters["Max Exp Text"] || "------/------"),
+    nMaxMembers: parseInt(parameters["Max Members"] || 4),
+
+    chineseFont: String(
+      parameters["Chinese Font"] || "SimHei, Heiti TC, sans-serif"
+    ),
+    koreanFont: String(
+      parameters["Korean Font"] || "NanumGothic, Dotum, AppleGothic, sans-serif"
+    ),
+    standardFont: String(parameters["Standard Font"] || "GameFont"),
+
+    levelTextSize: RS.HUD.loadRealNumber("Level Text Size", 12),
+    hpTextSize: RS.HUD.loadRealNumber("HP Text Size", 12),
+    mpTextSize: RS.HUD.loadRealNumber("MP Text Size", 12),
+    expTextSize: RS.HUD.loadRealNumber("EXP Text Size", 12),
+    nameTextSize: RS.HUD.loadRealNumber("Name Text Size", 12),
+
+    szHpColor: String(parameters["HP Color"] || "#ffffff"),
+    szMpColor: String(parameters["MP Color"] || "#ffffff"),
+    szExpColor: String(parameters["EXP Color"] || "#ffffff"),
+    szLevelColor: String(parameters["Level Color"] || "#ffffff"),
+    szNameColor: String(parameters["Name Color"] || "#ffffff"),
+
+    szHpOutlineColor: String(
+      parameters["HP Outline Color"] || "rgba(0, 0, 0, 0.5)"
+    ),
+    szMpOutlineColor: String(
+      parameters["MP Outline Color"] || "rgba(0, 0, 0, 0.5)"
+    ),
+    szExpOutlineColor: String(
+      parameters["EXP Outline Color"] || "rgba(0, 0, 0, 0.5)"
+    ),
+    szLevelOutlineColor: String(
+      parameters["Level Outline Color"] || "rgba(0, 0, 0, 0.5)"
+    ),
+    szNameOutlineColor: String(
+      parameters["Name Outline Color"] || "rgba(0, 0, 0, 0.5)"
+    ),
+
+    szHpOutlineWidth: RS.HUD.loadRealNumber("HP Outline Width", 4),
+    szMpOutlineWidth: RS.HUD.loadRealNumber("MP Outline Width", 4),
+    szExpOutlineWidth: RS.HUD.loadRealNumber("EXP Outline Width", 4),
+    szLevelOutlineWidth: RS.HUD.loadRealNumber("Level Outline Width", 4),
+    szNameOutlineWidth: RS.HUD.loadRealNumber("Name Outline Width", 4),
+
+    bUseCustomFont: Boolean(parameters["Using Custom Font"] === "true"),
+    szCustomFontName: String(parameters["Custom Font Name"] || "GameFont"),
+    szCustomFontSrc: String(
+      parameters["Custom Font Src"] || "fonts/mplus-1m-regular.ttf"
+    ),
+
+    ptCustormAnchor: [],
+    isCurrentBattleShowUp: false,
+    isPreviousShowUp: false,
+  });
+
+  // Opacity and Tone  Glitter Settings
+  const nOpacityEps = 5;
+  const nOpacityMin = 64;
+  const nFaceDiameter = 96;
+  const nHPGlitter = 0.4;
+  const nMPGlitter = 0.4;
+  const nEXPGlitter = 0.7;
+  const defaultTemplate = "hud_default_template.json";
+
+  /**
+   * @class RS.HUD
+   */
+  Object.assign(RS.HUD, {
+    loadCustomPosition(szRE) {
+      const W = RS.HUD.param.nWidth;
+      const H = RS.HUD.param.nHeight;
+      const PD = RS.HUD.param.nPD;
+      const BW = Graphics.width || 816;
+      const BH = Graphics.height || 624;
+      const x = eval("[" + szRE + "]");
+      if (x instanceof Array) return new Point(x[0], x[1]);
+      return new Point(0, 0);
+    },
+
+    getDefaultHUDAnchor() {
+      const anchor = {
+        LeftTop: {
+          x: RS.HUD.param.nPD,
+          y: RS.HUD.param.nPD,
         },
-
-        loadRealNumber(paramName, val) {
-            let value = Number(parameters[paramName]);
-            switch (typeof value) {
-                case "object":
-                case "undefined":
-                    value = val;
-                    break;
-            }
-            return value;
+        LeftBottom: {
+          x: RS.HUD.param.nPD,
+          y: Graphics.height - RS.HUD.param.nHeight - RS.HUD.param.nPD,
         },
-    });
+        RightTop: {
+          x: Graphics.width - RS.HUD.param.nWidth - RS.HUD.param.nPD,
+          y: RS.HUD.param.nPD,
+        },
+        RightBottom: {
+          x: Graphics.width - RS.HUD.param.nWidth - RS.HUD.param.nPD,
+          y: Graphics.height - RS.HUD.param.nHeight - RS.HUD.param.nPD,
+        },
+      };
 
-    Object.assign(RS.HUD.param, {
-        imgEXP: String(parameters["EXP Gauge"] || "exr"),
-        imgEmptyGauge: String(parameters["Empty Gauge"] || "gauge"),
-        imgHP: String(parameters["HP Gauge"] || "hp"),
-        imgMP: String(parameters["MP Gauge"] || "mp"),
-        imgEmptyHUD: String(parameters["HUD Background"] || "hud_window_empty"),
-        imgMasking: String(parameters["Masking"] || "masking"),
+      return anchor;
+    },
 
-        ptFace: RS.HUD.loadImagePosition(
-            parameters["Face Position"] || "0, 0, true"
-        ),
-        ptHP: RS.HUD.loadImagePosition(
-            parameters["HP Position"] || "160, 43, true"
-        ),
-        ptMP: RS.HUD.loadImagePosition(
-            parameters["MP Position"] || "160, 69, true"
-        ),
-        ptEXP: RS.HUD.loadImagePosition(
-            parameters["EXP Position"] || "83, 91, true"
-        ),
-        ptHPText: RS.HUD.loadImagePosition(
-            parameters["HP Text Position"] || "160, 53, true"
-        ),
-        ptMPText: RS.HUD.loadImagePosition(
-            parameters["MP Text Position"] || "160, 79, true"
-        ),
-        ptLevelText: RS.HUD.loadImagePosition(
-            parameters["Level Text Position"] || "60, 80, true"
-        ),
-        ptEXPText: RS.HUD.loadImagePosition(
-            parameters["EXP Text Position"] || "120.5, 93, true"
-        ),
-        ptNameText: RS.HUD.loadImagePosition(
-            parameters["Name Text Position"] || "54, 53, true"
-        ),
-
-        nWidth: RS.HUD.loadRealNumber("Width", 317),
-        nHeight: RS.HUD.loadRealNumber("Height", 101),
-        nPD: RS.HUD.loadRealNumber("Margin", 0),
-        blurProcessing: Boolean(parameters["Gaussian Blur"] === "true"),
-        bShow: Boolean(parameters["Show"] === "true"),
-        nOpacity: RS.HUD.loadRealNumber("Opacity", 255),
-        szAnchor: String(parameters["Anchor"] || "LeftTop"),
-        arrangement: eval(parameters["Arrangement"]),
-        preloadImportantFaces: eval(
-            parameters["preloadImportantFaces"] || "Actor1"
-        ),
-        battleOnly: Boolean(parameters["Battle Only"] === "true"),
-        showComma: Boolean(parameters["Show Comma"] === "true"),
-        maxExpText: String(parameters["Max Exp Text"] || "------/------"),
-        nMaxMembers: parseInt(parameters["Max Members"] || 4),
-
-        chineseFont: String(
-            parameters["Chinese Font"] || "SimHei, Heiti TC, sans-serif"
-        ),
-        koreanFont: String(
-            parameters["Korean Font"] ||
-                "NanumGothic, Dotum, AppleGothic, sans-serif"
-        ),
-        standardFont: String(parameters["Standard Font"] || "GameFont"),
-
-        levelTextSize: RS.HUD.loadRealNumber("Level Text Size", 12),
-        hpTextSize: RS.HUD.loadRealNumber("HP Text Size", 12),
-        mpTextSize: RS.HUD.loadRealNumber("MP Text Size", 12),
-        expTextSize: RS.HUD.loadRealNumber("EXP Text Size", 12),
-        nameTextSize: RS.HUD.loadRealNumber("Name Text Size", 12),
-
-        szHpColor: String(parameters["HP Color"] || "#ffffff"),
-        szMpColor: String(parameters["MP Color"] || "#ffffff"),
-        szExpColor: String(parameters["EXP Color"] || "#ffffff"),
-        szLevelColor: String(parameters["Level Color"] || "#ffffff"),
-        szNameColor: String(parameters["Name Color"] || "#ffffff"),
-
-        szHpOutlineColor: String(
-            parameters["HP Outline Color"] || "rgba(0, 0, 0, 0.5)"
-        ),
-        szMpOutlineColor: String(
-            parameters["MP Outline Color"] || "rgba(0, 0, 0, 0.5)"
-        ),
-        szExpOutlineColor: String(
-            parameters["EXP Outline Color"] || "rgba(0, 0, 0, 0.5)"
-        ),
-        szLevelOutlineColor: String(
-            parameters["Level Outline Color"] || "rgba(0, 0, 0, 0.5)"
-        ),
-        szNameOutlineColor: String(
-            parameters["Name Outline Color"] || "rgba(0, 0, 0, 0.5)"
-        ),
-
-        szHpOutlineWidth: RS.HUD.loadRealNumber("HP Outline Width", 4),
-        szMpOutlineWidth: RS.HUD.loadRealNumber("MP Outline Width", 4),
-        szExpOutlineWidth: RS.HUD.loadRealNumber("EXP Outline Width", 4),
-        szLevelOutlineWidth: RS.HUD.loadRealNumber("Level Outline Width", 4),
-        szNameOutlineWidth: RS.HUD.loadRealNumber("Name Outline Width", 4),
-
-        bUseCustomFont: Boolean(parameters["Using Custom Font"] === "true"),
-        szCustomFontName: String(parameters["Custom Font Name"] || "GameFont"),
-        szCustomFontSrc: String(
-            parameters["Custom Font Src"] || "fonts/mplus-1m-regular.ttf"
-        ),
-
-        ptCustormAnchor: [],
-        isCurrentBattleShowUp: false,
-        isPreviousShowUp: false,
-    });
-
-    // Opacity and Tone  Glitter Settings
-    const nOpacityEps = 5;
-    const nOpacityMin = 64;
-    const nFaceDiameter = 96;
-    const nHPGlitter = 0.4;
-    const nMPGlitter = 0.4;
-    const nEXPGlitter = 0.7;
-    const defaultTemplate = "hud_default_template.json";
+    localFilePath(fileName) {
+      if (!Utils.isNwjs()) return "";
+      let path, base;
+      path = require("path");
+      base = path.dirname(process.mainModule.filename);
+      return path.join(base, "data/") + (fileName || defaultTemplate);
+    },
 
     /**
-     * @class RS.HUD
+     *
+     * @param {String} fileName
+     * @return {Promise}
      */
-    Object.assign(RS.HUD, {
-        loadCustomPosition(szRE) {
-            const W = RS.HUD.param.nWidth;
-            const H = RS.HUD.param.nHeight;
-            const PD = RS.HUD.param.nPD;
-            const BW = Graphics.width || 816;
-            const BH = Graphics.height || 624;
-            const x = eval("[" + szRE + "]");
-            if (x instanceof Array) return new Point(x[0], x[1]);
-            return new Point(0, 0);
-        },
+    exportData(fileName) {
+      let fs, data, filePath;
+      if (!Utils.isNwjs()) return false;
+      if (!RS.HUD.param) return false;
+      fs = require("fs");
+      data = JSON.stringify(RS.HUD.param, null, "\t");
+      filePath = RS.HUD.localFilePath(fileName);
 
-        getDefaultHUDAnchor() {
-            const anchor = {
-                LeftTop: {
-                    x: RS.HUD.param.nPD,
-                    y: RS.HUD.param.nPD,
-                },
-                LeftBottom: {
-                    x: RS.HUD.param.nPD,
-                    y:
-                        Graphics.height -
-                        RS.HUD.param.nHeight -
-                        RS.HUD.param.nPD,
-                },
-                RightTop: {
-                    x: Graphics.width - RS.HUD.param.nWidth - RS.HUD.param.nPD,
-                    y: RS.HUD.param.nPD,
-                },
-                RightBottom: {
-                    x: Graphics.width - RS.HUD.param.nWidth - RS.HUD.param.nPD,
-                    y:
-                        Graphics.height -
-                        RS.HUD.param.nHeight -
-                        RS.HUD.param.nPD,
-                },
-            };
+      return new Promise((resolve, reject) => {
+        fs.writeFile(filePath, data, "utf8", (err) => {
+          if (err) reject(err);
+          resolve();
+        });
+      });
+    },
 
-            return anchor;
-        },
+    loadData(data) {
+      const params = Object.keys(RS.HUD.param);
+      data = JSON.parse(data);
+      params.forEach((name) => {
+        RS.HUD.param[name] = data[name];
+      });
+      setTimeout(() => $gameTemp.notifyHudRefresh(), 0);
+    },
 
-        localFilePath(fileName) {
-            if (!Utils.isNwjs()) return "";
-            let path, base;
-            path = require("path");
-            base = path.dirname(process.mainModule.filename);
-            return path.join(base, "data/") + (fileName || defaultTemplate);
-        },
+    importData(fileName) {
+      if (!Utils.isNwjs()) return false;
+      const fs = require("fs");
+      const filePath = RS.HUD.localFilePath(fileName);
+      const data = fs.readFileSync(filePath, {
+        encoding: "utf8",
+      });
+      RS.HUD.loadData(data);
+    },
 
-        /**
-         *
-         * @param {String} fileName
-         * @return {Promise}
-         */
-        exportData(fileName) {
-            let fs, data, filePath;
-            if (!Utils.isNwjs()) return false;
-            if (!RS.HUD.param) return false;
-            fs = require("fs");
-            data = JSON.stringify(RS.HUD.param, null, "\t");
-            filePath = RS.HUD.localFilePath(fileName);
-
-            return new Promise((resolve, reject) => {
-                fs.writeFile(filePath, data, "utf8", (err) => {
-                    if (err) reject(err);
-                    resolve();
-                });
-            });
-        },
-
-        loadData(data) {
-            const params = Object.keys(RS.HUD.param);
-            data = JSON.parse(data);
-            params.forEach((name) => {
-                RS.HUD.param[name] = data[name];
-            });
-            setTimeout(() => $gameTemp.notifyHudRefresh(), 0);
-        },
-
-        importData(fileName) {
-            if (!Utils.isNwjs()) return false;
-            const fs = require("fs");
-            const filePath = RS.HUD.localFilePath(fileName);
-            const data = fs.readFileSync(filePath, {
-                encoding: "utf8",
-            });
-            RS.HUD.loadData(data);
-        },
-
-        importDataWithAjax(fileName) {
-            const xhr = new XMLHttpRequest();
-            const url = "./data/" + (fileName || defaultTemplate);
-            xhr.open("GET", url);
-            xhr.onload = function () {
-                if (xhr.status < 400) {
-                    RS.HUD.loadData(xhr.responseText.slice(0));
-                }
-            };
-            xhr.send();
-        },
-
-        /**
-         * @example
-         *
-         * await RS.HUD.importDataWithAjax2("Actors.json")
-         *  .then(data => RS.HUD.loadData(data))
-         *  .catch(err => console.warn(err));
-         *
-         */
-        importDataWithAjax2(fileName) {
-            return new Promise((resolve, reject) => {
-                const xhr = new XMLHttpRequest();
-                const url = "./data/" + (fileName || defaultTemplate);
-                xhr.open("GET", url);
-                xhr.onload = function () {
-                    if (xhr.status < 400) {
-                        resolve(xhr.responseText.slice(0));
-                    }
-                };
-                xhr.onerror = function (err) {
-                    reject(err);
-                };
-                xhr.send();
-            });
-        },
-
-        loadPicture(filename) {
-            const bitmap = ImageManager.loadBitmap(`img/pictures/`, filename);
-            return bitmap;
-        },
-
-        loadFace(filename) {
-            const bitmap = ImageManager.loadFace(filename);
-            return bitmap;
-        },
-    });
-
-    //=================================================
-    // Vector2
-    //=================================================
-
-    class Vector2 {
-        /**
-         * @memberof Vector2
-         * @return {Vector2} val
-         */
-        static empty() {
-            return new Vector2(0.0, 0.0);
+    importDataWithAjax(fileName) {
+      const xhr = new XMLHttpRequest();
+      const url = "./data/" + (fileName || defaultTemplate);
+      xhr.open("GET", url);
+      xhr.onload = function () {
+        if (xhr.status < 400) {
+          RS.HUD.loadData(xhr.responseText.slice(0));
         }
+      };
+      xhr.send();
+    },
 
-        /**
-         * @memberof Vector2
-         * @function mix
-         * @param {Vector2} vec1
-         * @param {Vector2} vec2
-         * @param {Number} t
-         * @return {Number} val
-         * @static
-         */
-        static mix(vec1, vec2, t) {
-            const vec = Vector2.empty();
-            vec.x = vec1.x + t * (vec2.x - vec1.x);
-            vec.y = vec1.x + t * (vec2.y - vec1.y);
-            return vec;
-        }
+    /**
+     * @example
+     *
+     * await RS.HUD.importDataWithAjax2("Actors.json")
+     *  .then(data => RS.HUD.loadData(data))
+     *  .catch(err => console.warn(err));
+     *
+     */
+    importDataWithAjax2(fileName) {
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        const url = "./data/" + (fileName || defaultTemplate);
+        xhr.open("GET", url);
+        xhr.onload = function () {
+          if (xhr.status < 400) {
+            resolve(xhr.responseText.slice(0));
+          }
+        };
+        xhr.onerror = function (err) {
+          reject(err);
+        };
+        xhr.send();
+      });
+    },
 
-        /**
-         * @memberof Vector2
-         * @function isNormalize
-         * @param {Vector2} vec
-         * @static
-         */
-        static isNormalize(vec) {
-            if (vec.x >= 0.0 && vec.x <= 1.0 && vec.y >= 0.0 && vec.y <= 1.0) {
-                return true;
-            }
-            return false;
-        }
+    loadPicture(filename) {
+      const bitmap = ImageManager.loadBitmap(`img/pictures/`, filename);
+      return bitmap;
+    },
 
-        /**
-         * @memberof Vector2
-         * @function quadraticBezier
-         * @param {Vector2} vec1  start vector
-         * @param {Vector2} vec2  middle vector
-         * @param {Vector2} vec3  end vector
-         * @param {Number} t  frameTime(float between 0 and 1)
-         * @return {Vector2} p
-         * @static
-         */
-        static quadraticBezier(vec1, vec2, vec3, t) {
-            let d, e, p;
-            d = Vector2.mix(vec1, vec2, t);
-            e = Vector2.mix(vec2, vec3, t);
-            p = Vector2.mix(d, e, t);
-            return p;
-        }
+    loadFace(filename) {
+      const bitmap = ImageManager.loadFace(filename);
+      return bitmap;
+    },
+  });
 
-        /**
-         * @memberof Vector2
-         * @function limitAngle
-         * @param {Number} angle
-         * @return {Number} angle
-         * @static
-         */
-        static limitAngle(angle) {
-            while (angle < -Math.PI) angle += Math.PI * 2;
-            while (angle >= Math.PI) angle -= Math.PI * 2;
-            return angle;
-        }
+  //=================================================
+  // Vector2
+  //=================================================
 
-        /**
-         * @memberof Vector2
-         * @function distance
-         * @param {Vector2} vec1
-         * @param {Vector2} vec2
-         * @return {Number} dist
-         * @static
-         */
-        static distance(vec1, vec2) {
-            const val =
-                Math.pow(vec2.x - vec1.x, 2) + Math.pow(vec2.y - vec1.y, 2);
-            return Math.sqrt(val);
-        }
-
-        /**
-         * @constructor
-         * @memberof Vector2
-         * @param {Number} x
-         * @param {Number} y
-         */
-        constructor(x, y) {
-            this._x = x;
-            this._y = y;
-        }
-
-        /**
-         * @method add
-         * @param {Vector2} vec
-         * @return {Vector2} this
-         */
-        add(vec) {
-            if (vec instanceof Number) {
-                this.x = this.x + vec;
-                this.y = this.y + vec;
-                return this;
-            } else if (vec instanceof Vector2) {
-                this.x = this.x + vec.x;
-                this.y = this.y + vec.y;
-                return this;
-            }
-            return Vector2.empty();
-        }
-
-        /**
-         * @method minus
-         * @param {Vector2} vec
-         * @return {Vector2} this
-         */
-        minus(vec) {
-            if (vec instanceof Number) {
-                this.x = this.x - vec;
-                this.y = this.y - vec;
-                return this;
-            } else if (vec instanceof Vector2) {
-                this.x = this.x - vec.x;
-                this.y = this.y - vec.y;
-                return this;
-            }
-            return Vector2.empty();
-        }
-
-        /**
-         * @method div
-         * @param {Vector2} vec
-         * @return {Vector2} this
-         *
-         */
-        mul(vec) {
-            if (vec instanceof Number) {
-                this.x = this.x * vec;
-                this.y = this.y * vec;
-                return this;
-            } else if (vec instanceof Vector2) {
-                this.x = this.x * vec.x;
-                this.y = this.y * vec.y;
-                return this;
-            }
-            return Vector2.empty();
-        }
-
-        /**
-         * @method div
-         * @param {Vector2} vec
-         * @return {Vector2} this
-         */
-        div(vec) {
-            if (vec instanceof Number) {
-                this.x = this.x / vec;
-                this.y = this.y / vec;
-                return this;
-            } else if (vec instanceof Vector2) {
-                this.x = this.x / vec.x;
-                this.y = this.y / vec.y;
-                return this;
-            }
-            return Vector2.empty();
-        }
-
-        set(x, y) {
-            this.x = x;
-            this.y = y;
-        }
-
-        /**
-         * @method getLength
-         * @return {Number} angle
-         */
-        getLength() {
-            return Math.sqrt(this.x * this.x + this.y * this.y);
-        }
-
-        /**
-         * @method getAngle
-         * @param {Vector2} vec
-         * @return {Number} val
-         */
-        getAngle(vec) {
-            if (Vector2.isNormalize(this) && Vector2.isNormalize(vec)) {
-                const val = this.dot(vec);
-                return Math.acos(val);
-            } else {
-                console.error("This is not normalize vector");
-            }
-        }
-
-        /**
-         * @method normalize
-         * @return {Vector2} rel
-         */
-        normalize() {
-            const rel = Vector2.empty();
-            if (this.length != 0) {
-                rel.x = this.x / this.length;
-                rel.y = this.y / this.length;
-            }
-            return rel;
-        }
-
-        /**
-         * @method dot
-         * @param {Vector} vec
-         * @return {Number} angle
-         */
-        dot(vec) {
-            return this.x * vec.x + this.y * vec.y;
-        }
-
-        /**
-         * @method rotate
-         * @param angle {Number}
-         */
-        rotate(angle) {
-            this.x = this.x * Math.cos(angle) - this.y * Math.sin(angle);
-            this.y = this.x * Math.sin(angle) + this.y * Math.cos(angle);
-        }
-
-        /**
-         * @method pointDirection
-         * @param {Vector2} vec targetVector
-         * @param {Number} angle angle
-         * @return {Number} val
-         */
-        pointDirection(vec, angle) {
-            return (
-                Math.atan2(vec.y - this.y, vec.x - this.x) -
-                (Math.PI / 180) * angle
-            );
-        }
-
-        /**
-         * @method isEqual
-         * @param {Vector2} vec
-         * @return {Boolean} result
-         */
-        isEqual(vec) {
-            const eps = 0.001;
-            if (this.x - vec.x < eps && this.y - vec.y < eps) {
-                return true;
-            }
-            return false;
-        }
-
-        /**
-         * @memberof Vector2
-         * @property x
-         */
-        get x() {
-            return this._x;
-        }
-
-        /**
-         * @memberof Vector2
-         * @property x
-         */
-        set x(value) {
-            this._x = value;
-        }
-
-        /**
-         * @memberof Vector2
-         * @property y
-         */
-        get y() {
-            return this._y;
-        }
-
-        /**
-         * @memberof Vector2
-         * @property y
-         */
-        set y(value) {
-            this._y = value;
-        }
-
-        get length() {
-            return this.getLength();
-        }
+  class Vector2 {
+    /**
+     * @memberof Vector2
+     * @return {Vector2} val
+     */
+    static empty() {
+      return new Vector2(0.0, 0.0);
     }
 
-    //=================================================
-    // Bitmap
-    //=================================================
+    /**
+     * @memberof Vector2
+     * @function mix
+     * @param {Vector2} vec1
+     * @param {Vector2} vec2
+     * @param {Number} t
+     * @return {Number} val
+     * @static
+     */
+    static mix(vec1, vec2, t) {
+      const vec = Vector2.empty();
+      vec.x = vec1.x + t * (vec2.x - vec1.x);
+      vec.y = vec1.x + t * (vec2.y - vec1.y);
+      return vec;
+    }
 
-    Object.assign(Bitmap.prototype, {
-        drawClippingImage(bitmap, maskSource, _x, _y, _sx, _sy) {
-            const maskImage = maskSource._image;
-            const sourceImage = bitmap._image;
-            const context = this._context;
+    /**
+     * @memberof Vector2
+     * @function isNormalize
+     * @param {Vector2} vec
+     * @static
+     */
+    static isNormalize(vec) {
+      if (vec.x >= 0.0 && vec.x <= 1.0 && vec.y >= 0.0 && vec.y <= 1.0) {
+        return true;
+      }
+      return false;
+    }
 
-            if (!maskImage.complete || !sourceImage.complete) {
-                return;
-            }
+    /**
+     * @memberof Vector2
+     * @function quadraticBezier
+     * @param {Vector2} vec1  start vector
+     * @param {Vector2} vec2  middle vector
+     * @param {Vector2} vec3  end vector
+     * @param {Number} t  frameTime(float between 0 and 1)
+     * @return {Vector2} p
+     * @static
+     */
+    static quadraticBezier(vec1, vec2, vec3, t) {
+      let d, e, p;
+      d = Vector2.mix(vec1, vec2, t);
+      e = Vector2.mix(vec2, vec3, t);
+      p = Vector2.mix(d, e, t);
+      return p;
+    }
 
-            context.save();
-            context.drawImage(maskImage, _x, _y, nFaceDiameter, nFaceDiameter);
-            context.globalCompositeOperation = "source-atop";
-            context.drawImage(
-                sourceImage,
-                _sx,
-                _sy,
-                144,
-                144,
-                0,
-                0,
-                nFaceDiameter,
-                nFaceDiameter
-            );
-            context.restore();
+    /**
+     * @memberof Vector2
+     * @function limitAngle
+     * @param {Number} angle
+     * @return {Number} angle
+     * @static
+     */
+    static limitAngle(angle) {
+      while (angle < -Math.PI) angle += Math.PI * 2;
+      while (angle >= Math.PI) angle -= Math.PI * 2;
+      return angle;
+    }
 
-            this._baseTexture.update();
-        },
+    /**
+     * @memberof Vector2
+     * @function distance
+     * @param {Vector2} vec1
+     * @param {Vector2} vec2
+     * @return {Number} dist
+     * @static
+     */
+    static distance(vec1, vec2) {
+      const val = Math.pow(vec2.x - vec1.x, 2) + Math.pow(vec2.y - vec1.y, 2);
+      return Math.sqrt(val);
+    }
 
-        drawClippingImageNonBlur(source, _x, _y, _sx, _sy) {
-            const context = this._context;
-            const image = source._image;
+    /**
+     * @constructor
+     * @memberof Vector2
+     * @param {Number} x
+     * @param {Number} y
+     */
+    constructor(x, y) {
+      this._x = x;
+      this._y = y;
+    }
 
-            if (!image.complete) {
-                return;
-            }
+    /**
+     * @method add
+     * @param {Vector2} vec
+     * @return {Vector2} this
+     */
+    add(vec) {
+      if (vec instanceof Number) {
+        this.x = this.x + vec;
+        this.y = this.y + vec;
+        return this;
+      } else if (vec instanceof Vector2) {
+        this.x = this.x + vec.x;
+        this.y = this.y + vec.y;
+        return this;
+      }
+      return Vector2.empty();
+    }
 
-            context.save();
-            context.beginPath();
-            context.arc(_x + 45, _y + 45, 45, 0, Math.PI * 2, false);
-            context.clip();
-            context.drawImage(
-                image,
-                _sx,
-                _sy,
-                144,
-                144,
-                0,
-                0,
-                nFaceDiameter,
-                nFaceDiameter
-            );
-            context.restore();
+    /**
+     * @method minus
+     * @param {Vector2} vec
+     * @return {Vector2} this
+     */
+    minus(vec) {
+      if (vec instanceof Number) {
+        this.x = this.x - vec;
+        this.y = this.y - vec;
+        return this;
+      } else if (vec instanceof Vector2) {
+        this.x = this.x - vec.x;
+        this.y = this.y - vec.y;
+        return this;
+      }
+      return Vector2.empty();
+    }
 
-            this._baseTexture.update();
-        },
-    });
+    /**
+     * @method div
+     * @param {Vector2} vec
+     * @return {Vector2} this
+     *
+     */
+    mul(vec) {
+      if (vec instanceof Number) {
+        this.x = this.x * vec;
+        this.y = this.y * vec;
+        return this;
+      } else if (vec instanceof Vector2) {
+        this.x = this.x * vec.x;
+        this.y = this.y * vec.y;
+        return this;
+      }
+      return Vector2.empty();
+    }
 
-    //=================================================
-    // Game_Temp
-    //=================================================
+    /**
+     * @method div
+     * @param {Vector2} vec
+     * @return {Vector2} this
+     */
+    div(vec) {
+      if (vec instanceof Number) {
+        this.x = this.x / vec;
+        this.y = this.y / vec;
+        return this;
+      } else if (vec instanceof Vector2) {
+        this.x = this.x / vec.x;
+        this.y = this.y / vec.y;
+        return this;
+      }
+      return Vector2.empty();
+    }
 
-    Object.assign(Game_Temp.prototype, {
-        notifyHudTextRefresh() {
-            if ($gameHud) $gameHud.updateText();
-        },
+    set(x, y) {
+      this.x = x;
+      this.y = y;
+    }
 
-        notifyHudRefresh() {
-            if ($gameHud) $gameHud.refresh();
-        },
-    });
+    /**
+     * @method getLength
+     * @return {Number} angle
+     */
+    getLength() {
+      return Math.sqrt(this.x * this.x + this.y * this.y);
+    }
 
-    //=================================================
-    // Game_System ($gameSystem)
-    //=================================================
-    const _alias_Game_System_initialize = Game_System.prototype.initialize;
-    Game_System.prototype.initialize = function () {
-        _alias_Game_System_initialize.call(this);
-        this._rs_hud = this._rs_hud || {};
-        this._rs_hud.show = this._rs_hud.show || RS.HUD.param.bShow;
-        this._rs_hud.opacity = this._rs_hud.opacity || RS.HUD.param.nOpacity;
-    };
+    /**
+     * @method getAngle
+     * @param {Vector2} vec
+     * @return {Number} val
+     */
+    getAngle(vec) {
+      if (Vector2.isNormalize(this) && Vector2.isNormalize(vec)) {
+        const val = this.dot(vec);
+        return Math.acos(val);
+      } else {
+        console.error("This is not normalize vector");
+      }
+    }
 
-    //=================================================
-    // Game_Battler
-    //=================================================
+    /**
+     * @method normalize
+     * @return {Vector2} rel
+     */
+    normalize() {
+      const rel = Vector2.empty();
+      if (this.length != 0) {
+        rel.x = this.x / this.length;
+        rel.y = this.y / this.length;
+      }
+      return rel;
+    }
 
-    const alias_Game_Battler_refresh = Game_Battler.prototype.refresh;
-    Game_Battler.prototype.refresh = function () {
-        alias_Game_Battler_refresh.call(this);
-        $gameTemp.notifyHudTextRefresh();
-    };
+    /**
+     * @method dot
+     * @param {Vector} vec
+     * @return {Number} angle
+     */
+    dot(vec) {
+      return this.x * vec.x + this.y * vec.y;
+    }
 
-    //=================================================
-    // Game_Actor
-    //=================================================
+    /**
+     * @method rotate
+     * @param angle {Number}
+     */
+    rotate(angle) {
+      this.x = this.x * Math.cos(angle) - this.y * Math.sin(angle);
+      this.y = this.x * Math.sin(angle) + this.y * Math.cos(angle);
+    }
 
-    Game_Actor.prototype.relativeExp = function () {
-        if (this.isMaxLevel()) {
-            return this.expForLevel(this.maxLevel());
+    /**
+     * @method pointDirection
+     * @param {Vector2} vec targetVector
+     * @param {Number} angle angle
+     * @return {Number} val
+     */
+    pointDirection(vec, angle) {
+      return (
+        Math.atan2(vec.y - this.y, vec.x - this.x) - (Math.PI / 180) * angle
+      );
+    }
+
+    /**
+     * @method isEqual
+     * @param {Vector2} vec
+     * @return {Boolean} result
+     */
+    isEqual(vec) {
+      const eps = 0.001;
+      if (this.x - vec.x < eps && this.y - vec.y < eps) {
+        return true;
+      }
+      return false;
+    }
+
+    /**
+     * @memberof Vector2
+     * @property x
+     */
+    get x() {
+      return this._x;
+    }
+
+    /**
+     * @memberof Vector2
+     * @property x
+     */
+    set x(value) {
+      this._x = value;
+    }
+
+    /**
+     * @memberof Vector2
+     * @property y
+     */
+    get y() {
+      return this._y;
+    }
+
+    /**
+     * @memberof Vector2
+     * @property y
+     */
+    set y(value) {
+      this._y = value;
+    }
+
+    get length() {
+      return this.getLength();
+    }
+  }
+
+  //=================================================
+  // Bitmap
+  //=================================================
+
+  Object.assign(Bitmap.prototype, {
+    drawClippingImage(bitmap, maskSource, _x, _y, _sx, _sy) {
+      const maskImage = maskSource._image;
+      const sourceImage = bitmap._image;
+      const context = this._context;
+
+      if (!maskImage.complete || !sourceImage.complete) {
+        return;
+      }
+
+      context.save();
+      context.drawImage(maskImage, _x, _y, nFaceDiameter, nFaceDiameter);
+      context.globalCompositeOperation = "source-atop";
+      context.drawImage(
+        sourceImage,
+        _sx,
+        _sy,
+        144,
+        144,
+        0,
+        0,
+        nFaceDiameter,
+        nFaceDiameter
+      );
+      context.restore();
+
+      this._baseTexture.update();
+    },
+
+    drawClippingImageNonBlur(source, _x, _y, _sx, _sy) {
+      const context = this._context;
+      const image = source._image;
+
+      if (!image.complete) {
+        return;
+      }
+
+      context.save();
+      context.beginPath();
+      context.arc(_x + 45, _y + 45, 45, 0, Math.PI * 2, false);
+      context.clip();
+      context.drawImage(
+        image,
+        _sx,
+        _sy,
+        144,
+        144,
+        0,
+        0,
+        nFaceDiameter,
+        nFaceDiameter
+      );
+      context.restore();
+
+      this._baseTexture.update();
+    },
+  });
+
+  //=================================================
+  // Game_Temp
+  //=================================================
+
+  Object.assign(Game_Temp.prototype, {
+    notifyHudTextRefresh() {
+      if ($gameHud) $gameHud.updateText();
+    },
+
+    notifyHudRefresh() {
+      if ($gameHud) $gameHud.refresh();
+    },
+  });
+
+  //=================================================
+  // Game_System ($gameSystem)
+  //=================================================
+  const _alias_Game_System_initialize = Game_System.prototype.initialize;
+  Game_System.prototype.initialize = function () {
+    _alias_Game_System_initialize.call(this);
+    this._rs_hud = this._rs_hud || {};
+    this._rs_hud.show = this._rs_hud.show || RS.HUD.param.bShow;
+    this._rs_hud.opacity = this._rs_hud.opacity || RS.HUD.param.nOpacity;
+  };
+
+  //=================================================
+  // Game_Battler
+  //=================================================
+
+  const alias_Game_Battler_refresh = Game_Battler.prototype.refresh;
+  Game_Battler.prototype.refresh = function () {
+    alias_Game_Battler_refresh.call(this);
+    $gameTemp.notifyHudTextRefresh();
+  };
+
+  //=================================================
+  // Game_Actor
+  //=================================================
+
+  Game_Actor.prototype.relativeExp = function () {
+    if (this.isMaxLevel()) {
+      return this.expForLevel(this.maxLevel());
+    } else {
+      return this.currentExp() - this.currentLevelExp();
+    }
+  };
+
+  Game_Actor.prototype.relativeMaxExp = function () {
+    if (!this.isMaxLevel()) {
+      return this.nextLevelExp() - this.currentLevelExp();
+    } else {
+      return this.expForLevel(this.maxLevel());
+    }
+  };
+
+  //=================================================
+  // Game_Party
+  //=================================================
+
+  const alias_Game_Party_swapOrder = Game_Party.prototype.swapOrder;
+  Game_Party.prototype.swapOrder = function (index1, index2) {
+    alias_Game_Party_swapOrder.call(this, index1, index2);
+    $gameTemp.notifyHudRefresh();
+  };
+
+  //=================================================
+  // TextData
+  //=================================================
+
+  class TextData extends Sprite {
+    constructor(bitmap, func, params) {
+      super(bitmap);
+
+      this.setCallbackFunction(func);
+      this.updateTextLog();
+      this._params = params;
+      this.requestUpdate();
+    }
+
+    setCallbackFunction(cbFunc) {
+      this._callbackFunction = cbFunc;
+    }
+
+    updateTextLog() {
+      this._log = this._callbackFunction.call();
+    }
+
+    startCallbackFunction() {
+      this._callbackFunction.call(this);
+    }
+
+    getTextProperties(n) {
+      return this._params[n];
+    }
+
+    drawDisplayText() {
+      this.defaultFontSettings();
+      this.bitmap.drawText(
+        this._callbackFunction(this),
+        0,
+        0,
+        120,
+        this._params[0] + 8,
+        "center"
+      );
+    }
+
+    isRefresh() {
+      const currentText = this._callbackFunction();
+      return currentText.localeCompare(this._log) !== 0;
+    }
+
+    clearTextData() {
+      this.bitmap.clear();
+    }
+
+    requestUpdate() {
+      this.clearTextData();
+      this.drawDisplayText();
+      this.updateTextLog();
+    }
+
+    standardFontFace() {
+      if (RS.HUD.param.bUseCustomFont) {
+        return RS.HUD.param.szCustomFontName;
+      } else {
+        if (navigator.language.match(/^zh/)) {
+          return RS.HUD.param.chineseFont;
+        } else if (navigator.language.match(/^ko/)) {
+          return RS.HUD.param.koreanFont;
         } else {
-            return this.currentExp() - this.currentLevelExp();
+          return RS.HUD.param.standardFont;
         }
-    };
-
-    Game_Actor.prototype.relativeMaxExp = function () {
-        if (!this.isMaxLevel()) {
-            return this.nextLevelExp() - this.currentLevelExp();
-        } else {
-            return this.expForLevel(this.maxLevel());
-        }
-    };
-
-    //=================================================
-    // Game_Party
-    //=================================================
-
-    const alias_Game_Party_swapOrder = Game_Party.prototype.swapOrder;
-    Game_Party.prototype.swapOrder = function (index1, index2) {
-        alias_Game_Party_swapOrder.call(this, index1, index2);
-        $gameTemp.notifyHudRefresh();
-    };
-
-    //=================================================
-    // TextData
-    //=================================================
-
-    class TextData extends Sprite {
-        constructor(bitmap, func, params) {
-            super(bitmap);
-
-            this.setCallbackFunction(func);
-            this.updateTextLog();
-            this._params = params;
-            this.requestUpdate();
-        }
-
-        setCallbackFunction(cbFunc) {
-            this._callbackFunction = cbFunc;
-        }
-
-        updateTextLog() {
-            this._log = this._callbackFunction.call();
-        }
-
-        startCallbackFunction() {
-            this._callbackFunction.call(this);
-        }
-
-        getTextProperties(n) {
-            return this._params[n];
-        }
-
-        drawDisplayText() {
-            this.defaultFontSettings();
-            this.bitmap.drawText(
-                this._callbackFunction(this),
-                0,
-                0,
-                120,
-                this._params[0] + 8,
-                "center"
-            );
-        }
-
-        isRefresh() {
-            const currentText = this._callbackFunction();
-            return currentText.localeCompare(this._log) !== 0;
-        }
-
-        clearTextData() {
-            this.bitmap.clear();
-        }
-
-        requestUpdate() {
-            this.clearTextData();
-            this.drawDisplayText();
-            this.updateTextLog();
-        }
-
-        standardFontFace() {
-            if (RS.HUD.param.bUseCustomFont) {
-                return RS.HUD.param.szCustomFontName;
-            } else {
-                if (navigator.language.match(/^zh/)) {
-                    return RS.HUD.param.chineseFont;
-                } else if (navigator.language.match(/^ko/)) {
-                    return RS.HUD.param.koreanFont;
-                } else {
-                    return RS.HUD.param.standardFont;
-                }
-            }
-        }
-
-        defaultFontSettings() {
-            const param = this._params;
-
-            this.bitmap.fontFace = this.standardFontFace();
-            this.bitmap.fontSize = param[0];
-            this.bitmap.textColor = param[1];
-            this.bitmap.outlineColor = param[2];
-            this.bitmap.outlineWidth = param[3];
-        }
+      }
     }
 
-    //=================================================
-    // SpriteInterface
-    //=================================================
+    defaultFontSettings() {
+      const param = this._params;
 
-    class SpriteInterface extends Sprite {
-        updateText() {}
-        refresh() {}
-        createItemLayer() {}
-        drawAllHud() {}
-        updateFrame() {}
+      this.bitmap.fontFace = this.standardFontFace();
+      this.bitmap.fontSize = param[0];
+      this.bitmap.textColor = param[1];
+      this.bitmap.outlineColor = param[2];
+      this.bitmap.outlineWidth = param[3];
+    }
+  }
+
+  //=================================================
+  // SpriteInterface
+  //=================================================
+
+  class SpriteInterface extends Sprite {
+    updateText() {}
+    refresh() {}
+    createItemLayer() {}
+    drawAllHud() {}
+    updateFrame() {}
+  }
+
+  //=================================================
+  // RS.HUD.Layer
+  //=================================================
+
+  RS.HUD.Layer = class extends SpriteInterface {
+    constructor(bitmap) {
+      super(bitmap);
+      this.alpha = 0;
+      this.createItemLayer();
     }
 
-    //=================================================
-    // RS.HUD.Layer
-    //=================================================
-
-    RS.HUD.Layer = class extends SpriteInterface {
-        constructor(bitmap) {
-            super(bitmap);
-            this.alpha = 0;
-            this.createItemLayer();
-        }
-
-        destroy() {
-            super.destroy();
-        }
-
-        createItemLayer() {
-            this._items = new Sprite();
-            this._items.setFrame(0, 0, Graphics.width, Graphics.height);
-            this.addChild(this._items);
-        }
-
-        drawAllHud() {
-            const allHud = this._items;
-            const items = RS.HUD.param.arrangement;
-
-            // This removes any drawing objects that have already been created.
-            if (allHud.children.length > 0) {
-                allHud.removeChildren(0, allHud.children.length);
-            }
-
-            items.forEach((item, index) => {
-                // This code runs only when there is a party member at a specific index.
-                if (!!$gameParty.members()[index]) {
-                    if (item !== null)
-                        allHud.addChild(
-                            new HUD({
-                                szAnchor: item,
-                                nIndex: index,
-                            })
-                        );
-                }
-            });
-
-            // It sorts objects by party number.
-            this.sort();
-
-            this.show = $gameSystem._rs_hud.show;
-            this.opacity = $gameSystem._rs_hud.opacity;
-        }
-
-        update() {
-            const members = $gameParty.members();
-            this.children.forEach((child, idx) => {
-                if (child.update && members[idx]) {
-                    child.update();
-                }
-            });
-        }
-
-        sort() {
-            const allHud = this._items;
-            const array = allHud.children;
-
-            allHud.children = array.sort((a, b) => {
-                return a._memberIndex - b._memberIndex;
-            });
-        }
-
-        refresh() {
-            const allHud = this._items;
-            allHud.children.forEach((i) => allHud.removeChild(i));
-            this.drawAllHud();
-            this.show = $gameSystem._rs_hud.show;
-        }
-
-        updateText() {
-            const allHud = this._items;
-            allHud.children.forEach((i) => i.updateText());
-        }
-
-        updateFrame() {
-            var allHud = this._items;
-            allHud.children.forEach((i) => i.paramUpdate());
-        }
-
-        remove(index) {
-            setTimeout(() => {
-                while ($gameParty.size() !== this._items.children.length) {
-                    this.drawAllHud();
-                }
-            }, 0);
-        }
-
-        get show() {
-            return this.visible;
-        }
-
-        set show(value) {
-            this.visible = value;
-            $gameSystem._rs_hud.show = value;
-        }
-
-        get opacity() {
-            return Math.floor(this.alpha * 255);
-        }
-
-        set opacity(value) {
-            this.alpha = value * 0.00392156862745098;
-            $gameSystem._rs_hud.opacity = value.clamp(0, 255);
-        }
-    };
-
-    //=================================================
-    // RS.HUD.EmptyLayer
-    //=================================================
-
-    RS.HUD.EmptyLayer = class extends SpriteInterface {
-        constructor(bitmap) {
-            super(bitmap);
-            this.alpha = 0;
-        }
-
-        get show() {
-            return $gameSystem._rs_hud.show;
-        }
-
-        set show(value) {
-            $gameSystem._rs_hud.show = value;
-        }
-
-        get opacity() {
-            return $gameSystem._rs_hud.opacity;
-        }
-
-        set opacity(value) {
-            $gameSystem._rs_hud.opacity = value.clamp(0, 255);
-        }
-    };
-
-    //=================================================
-    // HUD
-    //=================================================
-
-    class HUD extends Stage {
-        constructor(config) {
-            super();
-
-            this.createHud();
-            this.setAnchor(config.szAnchor || "LeftBottom");
-            this.setMemberIndex(parseInt(config.nIndex) || 0);
-            this.createFace();
-            this.createHp();
-            this.createMp();
-            this.createExp();
-            this.createText();
-            this.createVector();
-            this.setPosition();
-            this.paramUpdate();
-        }
-
-        getAnchor(magnet) {
-            const anchor = RS.HUD.getDefaultHUDAnchor();
-
-            // Add Custom Anchor
-            for (let i = 0; i < RS.HUD.param.nMaxMembers; i++) {
-                const idx = parseInt(i + 1);
-                anchor["Custom Pos " + idx] = RS.HUD.param.ptCustormAnchor[i];
-            }
-
-            return anchor[magnet];
-        }
-
-        setAnchor(anchor) {
-            const pos = this.getAnchor(anchor);
-
-            if (typeof pos === "object") {
-                this._hud.x = pos.x;
-                this._hud.y = pos.y;
-            } else {
-                this.setAnchor(RS.HUD.param.szAnchor);
-            }
-        }
-
-        setMemberIndex(index) {
-            this._memberIndex = index;
-        }
-
-        createHud() {
-            this._hud = new Sprite(
-                RS.HUD.loadPicture(RS.HUD.param.imgEmptyHUD)
-            );
-            this._hud.z = 0;
-            this.addChild(this._hud);
-        }
-
-        createFace() {
-            const player = this.getPlayer();
-            this._faceBitmap = RS.HUD.loadFace(player.faceName());
-            this._maskBitmap = RS.HUD.loadPicture(RS.HUD.param.imgMasking);
-            this._maskBitmap.addLoadListener(() => {
-                this._faceBitmap.addLoadListener(
-                    this.circleClippingMask.bind(this, player.faceIndex())
-                );
-            });
-        }
-
-        circleClippingMask(faceIndex) {
-            this._face = new Sprite();
-
-            const fw = ImageManager.faceWidth;
-            const fh = ImageManager.faceHeight;
-            const sx = (faceIndex % 4) * fw;
-            const sy = Math.floor(faceIndex / 4) * fh;
-
-            this._face.bitmap = new Bitmap(nFaceDiameter, nFaceDiameter);
-
-            if (RS.HUD.param.blurProcessing) {
-                this._face.bitmap.drawClippingImage(
-                    this._faceBitmap,
-                    this._maskBitmap,
-                    0,
-                    0,
-                    sx,
-                    sy
-                );
-            } else {
-                this._face.bitmap.drawClippingImageNonBlur(
-                    this._faceBitmap,
-                    0,
-                    0,
-                    sx,
-                    sy
-                );
-            }
-
-            this.addChild(this._face);
-            this.setCoord(this._face, RS.HUD.param.ptFace);
-        }
-
-        addImage(sprite, cb, dirty) {
-            if (sprite.bitmap.width <= 0) {
-                return setTimeout(() => {
-                    cb(true);
-                }, 0);
-            }
-            this.addChild(sprite);
-            if (dirty) this.setPosition();
-        }
-
-        createHp(dirty) {
-            this._hp = new Sprite(RS.HUD.loadPicture(RS.HUD.param.imgHP));
-            this.addImage(this._hp, this.createHp.bind(this), dirty);
-        }
-
-        createMp(dirty) {
-            this._mp = new Sprite(RS.HUD.loadPicture(RS.HUD.param.imgMP));
-            this.addImage(this._mp, this.createMp.bind(this), dirty);
-        }
-
-        createExp(dirty) {
-            this._exp = new Sprite(RS.HUD.loadPicture(RS.HUD.param.imgEXP));
-            this.addImage(this._exp, this.createExp.bind(this), dirty);
-        }
-
-        getTextParams(src) {
-            const param = RS.HUD.param;
-            const textProperties = {
-                HP: [
-                    param.hpTextSize,
-                    param.szHpColor,
-                    param.szHpOutlineColor,
-                    param.szHpOutlineWidth,
-                ],
-                MP: [
-                    param.mpTextSize,
-                    param.szMpColor,
-                    param.szMpOutlineColor,
-                    param.szMpOutlineWidth,
-                ],
-                EXP: [
-                    param.expTextSize,
-                    param.szExpColor,
-                    param.szExpOutlineColor,
-                    param.szExpOutlineWidth,
-                ],
-                LEVEL: [
-                    param.levelTextSize,
-                    param.szLevelColor,
-                    param.szLevelOutlineColor,
-                    param.szLevelOutlineWidth,
-                ],
-                NAME: [
-                    param.nameTextSize,
-                    param.szNameColor,
-                    param.szNameOutlineColor,
-                    param.szNameOutlineWidth,
-                ],
-            };
-            return textProperties[src];
-        }
-
-        createText() {
-            this._hpText = this.addText(
-                this.getHp.bind(this),
-                this.getTextParams("HP")
-            );
-            this._mpText = this.addText(
-                this.getMp.bind(this),
-                this.getTextParams("MP")
-            );
-            this._expText = this.addText(
-                this.getExp.bind(this),
-                this.getTextParams("EXP")
-            );
-            this._levelText = this.addText(
-                this.getLevel.bind(this),
-                this.getTextParams("LEVEL")
-            );
-            this._nameText = this.addText(
-                this.getName.bind(this),
-                this.getTextParams("NAME")
-            );
-        }
-
-        createVector() {
-            this._vtA = Vector2.empty();
-            this._vtB = new Vector2(nFaceDiameter, nFaceDiameter);
-        }
-
-        setPosition() {
-            const param = RS.HUD.param;
-
-            if (this._face) this.setCoord(this._face, param.ptFace, 1);
-            this.setCoord(this._hp, param.ptHP, 2);
-            this.setCoord(this._mp, param.ptMP, 3);
-            this.setCoord(this._exp, param.ptEXP, 4);
-            this.setCoord(this._hpText, param.ptHPText, 5);
-            this.setCoord(this._mpText, param.ptMPText, 6);
-            this.setCoord(this._levelText, param.ptLevelText, 7);
-            this.setCoord(this._expText, param.ptEXPText, 8);
-            this.setCoord(this._nameText, param.ptNameText, 9);
-            this.children.sort(Tilemap.prototype._compareChildOrder.bind(this));
-        }
-
-        addText(strFunc, params) {
-            const bitmap = new Bitmap(120, params[0] + 8);
-            const text = new TextData(bitmap, strFunc, params);
-            this.addChildAt(text, this.children.length);
-            text.drawDisplayText();
-            return text;
-        }
-
-        getPlayer() {
-            return $gameParty.members()[this._memberIndex];
-        }
-
-        getHp() {
-            const player = this.getPlayer();
-            if (!player) return HUD.GAUGE_EMPTY_TEXT;
-            if (RS.HUD.param.showComma) {
-                return HUD.GAUGE_TEMPLATE_TEXT.appendComma(
-                    player.hp,
-                    player.mhp
-                );
-            } else {
-                return HUD.GAUGE_TEMPLATE_TEXT.format(player.hp, player.mhp);
-            }
-        }
-
-        getMp() {
-            const player = this.getPlayer();
-            if (!player) return HUD.GAUGE_EMPTY_TEXT;
-            if (RS.HUD.param.showComma) {
-                return HUD.GAUGE_TEMPLATE_TEXT.appendComma(
-                    player.mp,
-                    player.mmp
-                );
-            } else {
-                return HUD.GAUGE_TEMPLATE_TEXT.format(player.mp, player.mmp);
-            }
-        }
-
-        getExp() {
-            const player = this.getPlayer();
-            if (!player) return HUD.GAUGE_EMPTY_TEXT;
-            if (player.isMaxLevel()) return RS.HUD.param.maxExpText;
-            if (RS.HUD.param.showComma) {
-                return HUD.GAUGE_TEMPLATE_TEXT.appendComma(
-                    player.relativeExp(),
-                    player.relativeMaxExp()
-                );
-            } else {
-                return HUD.GAUGE_TEMPLATE_TEXT.format(
-                    player.relativeExp(),
-                    player.relativeMaxExp()
-                );
-            }
-        }
-
-        getLevel() {
-            const player = this.getPlayer();
-            if (!player) return HUD.LEVEL_EMPTY_TEXT;
-            if (RS.HUD.param.showComma) {
-                return HUD.LEVEL_TEMPLATE_TEXT.appendComma(player.level);
-            } else {
-                return HUD.LEVEL_TEMPLATE_TEXT.format(player.level);
-            }
-        }
-
-        getName() {
-            const player = this.getPlayer();
-            if (!player) return "";
-            const name = player && player.name();
-            if (name) {
-                return name;
-            } else {
-                return " ";
-            }
-        }
-
-        getHpRate() {
-            const player = this.getPlayer();
-            if (!player) return 0;
-            return this._hp.bitmap.width * (player.hp / player.mhp);
-        }
-
-        getMpRate() {
-            const player = this.getPlayer();
-            if (!player) return 0;
-            return this._mp.bitmap.width * (player.mp / player.mmp);
-        }
-
-        getExpRate() {
-            const player = this.getPlayer();
-            if (!player) return 0;
-            return (
-                this._exp.bitmap.width *
-                (player.relativeExp() / player.relativeMaxExp())
-            );
-        }
-
-        getRealExpRate() {
-            const player = this.getPlayer();
-            if (!player) return 0;
-            if (this.inBattle() && $dataSystem.optDisplayTp) {
-                return player.tp / player.maxTp();
-            } else {
-                return player.relativeExp() / player.relativeMaxExp();
-            }
-        }
-
-        setOpacityisNotGlobal(value) {
-            this.children.forEach((i) => {
-                i.opacity = value.clamp(0, 255);
-            });
-        }
-
-        getOpacityValue(dir) {
-            let value = this._hud.opacity;
-            const maxOpaicty = $gameSystem._rs_hud.opacity;
-            if (maxOpaicty <= 0) return 0;
-            if (dir) {
-                value -= nOpacityEps;
-                if (value < nOpacityMin) value = nOpacityMin;
-            } else {
-                value += nOpacityEps;
-                if (value > maxOpaicty) value = maxOpaicty;
-            }
-            return value;
-        }
-
-        setCoord(s, obj, z) {
-            const oy =
-                s._callbackFunction instanceof Function
-                    ? s.bitmap.height / 2
-                    : 0;
-            s.x = this._hud.x + obj.x;
-            s.y = this._hud.y + obj.y - oy;
-            s.z = z;
-            s.visible = obj.visible;
-        }
-
-        update() {
-            this.paramUpdate();
-            this.updateOpacity();
-            this.updateToneForAll();
-        }
-
-        updateOpacity() {
-            const player = this.getPlayer();
-            if (
-                (!this.checkHitToMouse(this._hud, nFaceDiameter) &&
-                    this.checkHit()) ||
-                (player && player.isDead())
-            ) {
-                this.setOpacityisNotGlobal(this.getOpacityValue(true));
-            } else {
-                this.setOpacityisNotGlobal(this.getOpacityValue(false));
-            }
-        }
-
-        checkHit() {
-            const x = $gamePlayer.screenX();
-            const y = $gamePlayer.screenY();
-            return (
-                x >= this._hud.x &&
-                y >= this._hud.y &&
-                x < this._hud.x + this._hud.width &&
-                y < this._hud.y + this._hud.height
-            );
-        }
-
-        checkHitToMouse(object, n) {
-            const middle = Vector2.empty();
-            middle.x = object.width / 2 + object.x;
-            middle.y = object.height / 2 + object.y;
-            return Vector2.distance(middle, HUD.MOUSE_EVENT) < n;
-        }
-
-        checkForToneUpdate(obj, cond) {
-            if (obj instanceof Sprite && cond) {
-                const t = (Date.now() % 1000) / 1000;
-                const vt = Vector2.quadraticBezier(
-                    this._vtA,
-                    this._vtB,
-                    this._vtA,
-                    t
-                );
-                obj.setColorTone([vt.x, vt.x, vt.x, 0]);
-            } else {
-                if (obj)
-                    obj.setColorTone([
-                        this._vtA.x,
-                        this._vtA.x,
-                        this._vtA.x,
-                        0,
-                    ]);
-            }
-        }
-
-        updateToneForAll() {
-            if (!this.getPlayer()) return false;
-            this.checkForToneUpdate(
-                this._hp,
-                this.getPlayer().hpRate() <= nHPGlitter
-            );
-            this.checkForToneUpdate(
-                this._mp,
-                this.getPlayer().mpRate() <= nMPGlitter
-            );
-            this.checkForToneUpdate(
-                this._exp,
-                this.getRealExpRate() >= nEXPGlitter
-            );
-        }
-
-        updateText() {
-            [
-                this._hpText,
-                this._mpText,
-                this._expText,
-                this._levelText,
-                this._nameText,
-            ].forEach((e) => {
-                e.requestUpdate();
-            }, this);
-        }
-
-        paramUpdate() {
-            this._hp.setFrame(0, 0, this.getHpRate(), this._hp.height);
-            this._mp.setFrame(0, 0, this.getMpRate(), this._mp.height);
-            this._exp.setFrame(0, 0, this.getExpRate(), this._exp.height);
-        }
-
-        inBattle() {
-            return (
-                SceneManager._scene instanceof Scene_Battle ||
-                $gameParty.inBattle() ||
-                DataManager.isBattleTest()
-            );
-        }
-
-        get show() {
-            return $gameSystem._rs_hud.show;
-        }
-
-        set show(value) {
-            this.children.forEach((i) => (i.visible = value));
-
-            $gameSystem._rs_hud.show = value;
-
-            if (value) {
-                this.setPosition();
-            }
-        }
-
-        get opacity() {
-            return $gameSystem._rs_hud.opacity;
-        }
-
-        set opacity(value) {
-            this.children.forEach((i) => (i.opacity = value.clamp(0, 255)));
-            $gameSystem._rs_hud.opacity = value.clamp(0, 255);
-        }
+    destroy() {
+      super.destroy();
     }
 
-    HUD.GAUGE_EMPTY_TEXT = "0 / 0";
-    HUD.LEVEL_EMPTY_TEXT = "0";
-    HUD.GAUGE_TEMPLATE_TEXT = "%1 / %2";
-    HUD.LEVEL_TEMPLATE_TEXT = "%1";
-    HUD.MOUSE_EVENT = new Vector2(Graphics.width / 2, Graphics.height / 2);
+    createItemLayer() {
+      this._items = new Sprite();
+      this._items.setFrame(0, 0, Graphics.width, Graphics.height);
+      this.addChild(this._items);
+    }
 
-    //=================================================
-    // TouchInput
-    //=================================================
+    drawAllHud() {
+      const allHud = this._items;
+      const items = RS.HUD.param.arrangement;
 
-    const alias_TouchInput_onMouseMove = TouchInput._onMouseMove;
-    TouchInput._onMouseMove = function (event) {
-        alias_TouchInput_onMouseMove.call(this, event);
-        const x = Graphics.pageToCanvasX(event.pageX);
-        const y = Graphics.pageToCanvasY(event.pageY);
-        if (HUD.MOUSE_EVENT instanceof Vector2) {
-            HUD.MOUSE_EVENT.set(x, y);
-        }
-    };
+      // This removes any drawing objects that have already been created.
+      if (allHud.children.length > 0) {
+        allHud.removeChildren(0, allHud.children.length);
+      }
 
-    //=================================================
-    // Scene_Map
-    //=================================================
-
-    const alias_Scene_Map_createDisplayObjects =
-        Scene_Map.prototype.createDisplayObjects;
-    const alias_Scene_Map_start = Scene_Map.prototype.start;
-    const alias_Scene_Map_terminate = Scene_Map.prototype.terminate;
-    const alias_Scene_Map_snapForBattleBackground =
-        Scene_Map.prototype.snapForBattleBackground;
-    const alias_Scene_Map_updateFade = Scene_Map.prototype.updateFade;
-
-    Object.assign(Scene_Map.prototype, {
-        createDisplayObjects() {
-            alias_Scene_Map_createDisplayObjects.call(this);
-
-            if (
-                RS.HUD.param.battleOnly ||
-                ($dataMap.meta && $dataMap.meta.DISABLE_HUD)
-            ) {
-                $gameHud = new RS.HUD.EmptyLayer();
-            } else {
-                this._hudLayer = new RS.HUD.Layer();
-                this._hudLayer.setFrame(0, 0, Graphics.width, Graphics.height);
-
-                $gameHud = this._hudLayer;
-                this._hudLayer.drawAllHud();
-
-                this.addChild(this._hudLayer);
-                this.swapChildren(this._windowLayer, this._hudLayer);
-            }
-        },
-
-        start() {
-            alias_Scene_Map_start.call(this);
-            $gameTemp.notifyHudTextRefresh();
-        },
-
-        terminate() {
-            this.removeChild(this._hudLayer);
-            $gameHud = null;
-            alias_Scene_Map_terminate.call(this);
-        },
-
-        snapForBattleBackground() {
-            const temp = $gameHud.show;
-            if ($gameHud && $gameHud.show) $gameHud.show = false;
-            alias_Scene_Map_snapForBattleBackground.call(this);
-            if ($gameHud && !$gameHud.show) {
-                RS.HUD.param.isPreviousShowUp = temp;
-                $gameHud.show = temp;
-            }
-        },
-
-        updateFade() {
-            alias_Scene_Map_updateFade.call(this);
-            if (this._fadeDuration == 0 && RS.HUD.param.isCurrentBattleShowUp) {
-                if ($gameHud) $gameHud.show = RS.HUD.param.isPreviousShowUp;
-                RS.HUD.param.isCurrentBattleShowUp = false;
-            }
-        },
-    });
-
-    //=================================================
-    // Game_Party
-    //=================================================
-
-    const alias_Game_Party_addActor = Game_Party.prototype.addActor;
-    const alias_Game_Party_removeActor = Game_Party.prototype.removeActor;
-
-    Object.assign(Game_Party.prototype, {
-        addActor(actorId) {
-            alias_Game_Party_addActor.call(this, actorId);
-            $gameTemp.notifyHudRefresh();
-        },
-
-        removeActor(actorId) {
-            alias_Game_Party_removeActor.call(this, actorId);
-            $gameTemp.notifyHudRefresh();
-        },
-    });
-
-    //=================================================
-    // Scene_Boot
-    //=================================================
-
-    const alias_Scene_Boot_loadSystemWindowImage =
-        Scene_Boot.prototype.loadSystemWindowImage;
-    const alias_Scene_Boot_start = Scene_Boot.prototype.start;
-
-    Object.assign(Scene_Boot.prototype, {
-        loadSystemWindowImage() {
-            alias_Scene_Boot_loadSystemWindowImage.call(this);
-
-            // Load Face
-            RS.HUD.param.preloadImportantFaces.forEach((i) =>
-                RS.HUD.loadFace(i)
+      items.forEach((item, index) => {
+        // This code runs only when there is a party member at a specific index.
+        if (!!$gameParty.members()[index]) {
+          if (item !== null)
+            allHud.addChild(
+              new HUD({
+                szAnchor: item,
+                nIndex: index,
+              })
             );
-
-            [
-                RS.HUD.param.imgHP,
-                RS.HUD.param.imgMP,
-                RS.HUD.param.imgEXP,
-            ].forEach((i) => RS.HUD.loadPicture(i));
-        },
-
-        start() {
-            alias_Scene_Boot_start.call(this);
-
-            // Load Custom Anchor
-            for (let i = 0; i < RS.HUD.param.nMaxMembers; i++) {
-                RS.HUD.param.ptCustormAnchor.push(
-                    RS.HUD.loadCustomPosition(
-                        parameters[String("Custom Pos " + (i + 1))] || "0, 0"
-                    )
-                );
-            }
-
-            // Load Custom Font
-            if (RS.HUD.param.bUseCustomFont) {
-                const fontSrc = RS.HUD.param.szCustomFontSrc.replace(
-                    "fonts/",
-                    ""
-                );
-                FontManager.load(RS.HUD.param.szCustomFontName, fontSrc);
-            }
-        },
-    });
-
-    //=================================================
-    // Scene_Map
-    //=================================================
-
-    const alias_Scene_Battle_updateFade = Scene_Battle.prototype.updateFade;
-    Scene_Battle.prototype.updateFade = function () {
-        alias_Scene_Battle_updateFade.call(this);
-        if (this._fadeDuration == 0 && !RS.HUD.param.isCurrentBattleShowUp) {
-            if ($gameHud) $gameHud.show = true;
-            RS.HUD.param.isCurrentBattleShowUp = true;
         }
-    };
+      });
 
-    //=================================================
-    // Game_Interpreter
-    //=================================================
+      // It sorts objects by party number.
+      this.sort();
 
-    PluginManager.registerCommand(pluginName, "opacity", (args) => {
-        $gameHud.opacity = args.opacity;
-    });
+      this.show = $gameSystem._rs_hud.show;
+      this.opacity = $gameSystem._rs_hud.opacity;
+    }
 
-    PluginManager.registerCommand(pluginName, "visible", (args) => {
-        $gameHud.show = Boolean(args.valid === "true");
-    });
+    update() {
+      const members = $gameParty.members();
+      this.children.forEach((child, idx) => {
+        if (child.update && members[idx]) {
+          child.update();
+        }
+      });
+    }
 
-    PluginManager.registerCommand(pluginName, "import", async (args) => {
-        await RS.HUD.importDataWithAjax2(args.filename + ".json")
-            .then((data) => RS.HUD.loadData(data))
-            .catch((err) => console.warn(err));
-    });
+    sort() {
+      const allHud = this._items;
+      const array = allHud.children;
 
-    PluginManager.registerCommand(pluginName, "export", (args) => {
-        RS.HUD.exportData(args.filename + ".json")
-            .then((result) => {})
-            .catch((err) => console.warn(err));
-    });
+      allHud.children = array.sort((a, b) => {
+        return a._memberIndex - b._memberIndex;
+      });
+    }
 
-    //=================================================
-    // String Utils
-    //=================================================
+    refresh() {
+      const allHud = this._items;
+      allHud.children.forEach((i) => allHud.removeChild(i));
+      this.drawAllHud();
+      this.show = $gameSystem._rs_hud.show;
+    }
 
-    Object.assign(String.prototype, {
-        /**
-         * String.prototype.toArray
-         */
-        toArray() {
-            return this.split("");
-        },
+    updateText() {
+      const allHud = this._items;
+      allHud.children.forEach((i) => i.updateText());
+    }
 
-        /**
-         * String.prototype.reverse
-         */
-        reverse() {
-            return this.toArray().reverse().join("");
-        },
+    updateFrame() {
+      var allHud = this._items;
+      allHud.children.forEach((i) => i.paramUpdate());
+    }
 
-        /**
-         * String.prototype.toComma
-         */
-        toComma() {
-            return this.reverse()
-                .match(/.{1,3}/g)
-                .join(",")
-                .reverse();
-        },
+    remove(index) {
+      setTimeout(() => {
+        while ($gameParty.size() !== this._items.children.length) {
+          this.drawAllHud();
+        }
+      }, 0);
+    }
 
-        /**
-         * Replaces %1, %2 and so on in the string to the arguments.
-         *
-         * @method String.prototype.format
-         * @param {Any} ...args The objects to format
-         * @return {String} A formatted string
-         */
-        appendComma(...args) {
-            return this.replace(/%([0-9]+)/g, (s, n) => {
-                return (args[Number(n) - 1] + "").toComma();
-            });
-        },
-    });
+    get show() {
+      return this.visible;
+    }
 
-    //=================================================
-    // Output Objects
-    //=================================================
+    set show(value) {
+      this.visible = value;
+      $gameSystem._rs_hud.show = value;
+    }
 
-    window.HUD = HUD;
+    get opacity() {
+      return Math.floor(this.alpha * 255);
+    }
+
+    set opacity(value) {
+      this.alpha = value * 0.00392156862745098;
+      $gameSystem._rs_hud.opacity = value.clamp(0, 255);
+    }
+  };
+
+  //=================================================
+  // RS.HUD.EmptyLayer
+  //=================================================
+
+  RS.HUD.EmptyLayer = class extends SpriteInterface {
+    constructor(bitmap) {
+      super(bitmap);
+      this.alpha = 0;
+    }
+
+    get show() {
+      return $gameSystem._rs_hud.show;
+    }
+
+    set show(value) {
+      $gameSystem._rs_hud.show = value;
+    }
+
+    get opacity() {
+      return $gameSystem._rs_hud.opacity;
+    }
+
+    set opacity(value) {
+      $gameSystem._rs_hud.opacity = value.clamp(0, 255);
+    }
+  };
+
+  //=================================================
+  // HUD
+  //=================================================
+
+  class HUD extends Stage {
+    constructor(config) {
+      super();
+
+      this.createHud();
+      this.setAnchor(config.szAnchor || "LeftBottom");
+      this.setMemberIndex(parseInt(config.nIndex) || 0);
+      this.createFace();
+      this.createHp();
+      this.createMp();
+      this.createExp();
+      this.createText();
+      this.createVector();
+      this.setPosition();
+      this.paramUpdate();
+    }
+
+    getAnchor(magnet) {
+      const anchor = RS.HUD.getDefaultHUDAnchor();
+
+      // Add Custom Anchor
+      for (let i = 0; i < RS.HUD.param.nMaxMembers; i++) {
+        const idx = parseInt(i + 1);
+        anchor["Custom Pos " + idx] = RS.HUD.param.ptCustormAnchor[i];
+      }
+
+      return anchor[magnet];
+    }
+
+    setAnchor(anchor) {
+      const pos = this.getAnchor(anchor);
+
+      if (typeof pos === "object") {
+        this._hud.x = pos.x;
+        this._hud.y = pos.y;
+      } else {
+        this.setAnchor(RS.HUD.param.szAnchor);
+      }
+    }
+
+    setMemberIndex(index) {
+      this._memberIndex = index;
+    }
+
+    createHud() {
+      this._hud = new Sprite(RS.HUD.loadPicture(RS.HUD.param.imgEmptyHUD));
+      this._hud.z = 0;
+      this.addChild(this._hud);
+    }
+
+    createFace() {
+      const player = this.getPlayer();
+      this._faceBitmap = RS.HUD.loadFace(player.faceName());
+      this._maskBitmap = RS.HUD.loadPicture(RS.HUD.param.imgMasking);
+      this._maskBitmap.addLoadListener(() => {
+        this._faceBitmap.addLoadListener(
+          this.circleClippingMask.bind(this, player.faceIndex())
+        );
+      });
+    }
+
+    circleClippingMask(faceIndex) {
+      this._face = new Sprite();
+
+      const fw = ImageManager.faceWidth;
+      const fh = ImageManager.faceHeight;
+      const sx = (faceIndex % 4) * fw;
+      const sy = Math.floor(faceIndex / 4) * fh;
+
+      this._face.bitmap = new Bitmap(nFaceDiameter, nFaceDiameter);
+
+      if (RS.HUD.param.blurProcessing) {
+        this._face.bitmap.drawClippingImage(
+          this._faceBitmap,
+          this._maskBitmap,
+          0,
+          0,
+          sx,
+          sy
+        );
+      } else {
+        this._face.bitmap.drawClippingImageNonBlur(
+          this._faceBitmap,
+          0,
+          0,
+          sx,
+          sy
+        );
+      }
+
+      this.addChild(this._face);
+      this.setCoord(this._face, RS.HUD.param.ptFace);
+    }
+
+    addImage(sprite, cb, dirty) {
+      if (sprite.bitmap.width <= 0) {
+        return setTimeout(() => {
+          cb(true);
+        }, 0);
+      }
+      this.addChild(sprite);
+      if (dirty) this.setPosition();
+    }
+
+    createHp(dirty) {
+      this._hp = new Sprite(RS.HUD.loadPicture(RS.HUD.param.imgHP));
+      this.addImage(this._hp, this.createHp.bind(this), dirty);
+    }
+
+    createMp(dirty) {
+      this._mp = new Sprite(RS.HUD.loadPicture(RS.HUD.param.imgMP));
+      this.addImage(this._mp, this.createMp.bind(this), dirty);
+    }
+
+    createExp(dirty) {
+      this._exp = new Sprite(RS.HUD.loadPicture(RS.HUD.param.imgEXP));
+      this.addImage(this._exp, this.createExp.bind(this), dirty);
+    }
+
+    getTextParams(src) {
+      const param = RS.HUD.param;
+      const textProperties = {
+        HP: [
+          param.hpTextSize,
+          param.szHpColor,
+          param.szHpOutlineColor,
+          param.szHpOutlineWidth,
+        ],
+        MP: [
+          param.mpTextSize,
+          param.szMpColor,
+          param.szMpOutlineColor,
+          param.szMpOutlineWidth,
+        ],
+        EXP: [
+          param.expTextSize,
+          param.szExpColor,
+          param.szExpOutlineColor,
+          param.szExpOutlineWidth,
+        ],
+        LEVEL: [
+          param.levelTextSize,
+          param.szLevelColor,
+          param.szLevelOutlineColor,
+          param.szLevelOutlineWidth,
+        ],
+        NAME: [
+          param.nameTextSize,
+          param.szNameColor,
+          param.szNameOutlineColor,
+          param.szNameOutlineWidth,
+        ],
+      };
+      return textProperties[src];
+    }
+
+    createText() {
+      this._hpText = this.addText(
+        this.getHp.bind(this),
+        this.getTextParams("HP")
+      );
+      this._mpText = this.addText(
+        this.getMp.bind(this),
+        this.getTextParams("MP")
+      );
+      this._expText = this.addText(
+        this.getExp.bind(this),
+        this.getTextParams("EXP")
+      );
+      this._levelText = this.addText(
+        this.getLevel.bind(this),
+        this.getTextParams("LEVEL")
+      );
+      this._nameText = this.addText(
+        this.getName.bind(this),
+        this.getTextParams("NAME")
+      );
+    }
+
+    createVector() {
+      this._vtA = Vector2.empty();
+      this._vtB = new Vector2(nFaceDiameter, nFaceDiameter);
+    }
+
+    setPosition() {
+      const param = RS.HUD.param;
+
+      if (this._face) this.setCoord(this._face, param.ptFace, 1);
+      this.setCoord(this._hp, param.ptHP, 2);
+      this.setCoord(this._mp, param.ptMP, 3);
+      this.setCoord(this._exp, param.ptEXP, 4);
+      this.setCoord(this._hpText, param.ptHPText, 5);
+      this.setCoord(this._mpText, param.ptMPText, 6);
+      this.setCoord(this._levelText, param.ptLevelText, 7);
+      this.setCoord(this._expText, param.ptEXPText, 8);
+      this.setCoord(this._nameText, param.ptNameText, 9);
+      this.children.sort(Tilemap.prototype._compareChildOrder.bind(this));
+    }
+
+    addText(strFunc, params) {
+      const bitmap = new Bitmap(120, params[0] + 8);
+      const text = new TextData(bitmap, strFunc, params);
+      this.addChildAt(text, this.children.length);
+      text.drawDisplayText();
+      return text;
+    }
+
+    getPlayer() {
+      return $gameParty.members()[this._memberIndex];
+    }
+
+    getHp() {
+      const player = this.getPlayer();
+      if (!player) return HUD.GAUGE_EMPTY_TEXT;
+      if (RS.HUD.param.showComma) {
+        return HUD.GAUGE_TEMPLATE_TEXT.appendComma(player.hp, player.mhp);
+      } else {
+        return HUD.GAUGE_TEMPLATE_TEXT.format(player.hp, player.mhp);
+      }
+    }
+
+    getMp() {
+      const player = this.getPlayer();
+      if (!player) return HUD.GAUGE_EMPTY_TEXT;
+      if (RS.HUD.param.showComma) {
+        return HUD.GAUGE_TEMPLATE_TEXT.appendComma(player.mp, player.mmp);
+      } else {
+        return HUD.GAUGE_TEMPLATE_TEXT.format(player.mp, player.mmp);
+      }
+    }
+
+    getExp() {
+      const player = this.getPlayer();
+      if (!player) return HUD.GAUGE_EMPTY_TEXT;
+      if (player.isMaxLevel()) return RS.HUD.param.maxExpText;
+      if (RS.HUD.param.showComma) {
+        return HUD.GAUGE_TEMPLATE_TEXT.appendComma(
+          player.relativeExp(),
+          player.relativeMaxExp()
+        );
+      } else {
+        return HUD.GAUGE_TEMPLATE_TEXT.format(
+          player.relativeExp(),
+          player.relativeMaxExp()
+        );
+      }
+    }
+
+    getLevel() {
+      const player = this.getPlayer();
+      if (!player) return HUD.LEVEL_EMPTY_TEXT;
+      if (RS.HUD.param.showComma) {
+        return HUD.LEVEL_TEMPLATE_TEXT.appendComma(player.level);
+      } else {
+        return HUD.LEVEL_TEMPLATE_TEXT.format(player.level);
+      }
+    }
+
+    getName() {
+      const player = this.getPlayer();
+      if (!player) return "";
+      const name = player && player.name();
+      if (name) {
+        return name;
+      } else {
+        return " ";
+      }
+    }
+
+    getHpRate() {
+      const player = this.getPlayer();
+      if (!player) return 0;
+      return this._hp.bitmap.width * (player.hp / player.mhp);
+    }
+
+    getMpRate() {
+      const player = this.getPlayer();
+      if (!player) return 0;
+      return this._mp.bitmap.width * (player.mp / player.mmp);
+    }
+
+    getExpRate() {
+      const player = this.getPlayer();
+      if (!player) return 0;
+      return (
+        this._exp.bitmap.width *
+        (player.relativeExp() / player.relativeMaxExp())
+      );
+    }
+
+    getRealExpRate() {
+      const player = this.getPlayer();
+      if (!player) return 0;
+      if (this.inBattle() && $dataSystem.optDisplayTp) {
+        return player.tp / player.maxTp();
+      } else {
+        return player.relativeExp() / player.relativeMaxExp();
+      }
+    }
+
+    setOpacityisNotGlobal(value) {
+      this.children.forEach((i) => {
+        i.opacity = value.clamp(0, 255);
+      });
+    }
+
+    getOpacityValue(dir) {
+      let value = this._hud.opacity;
+      const maxOpaicty = $gameSystem._rs_hud.opacity;
+      if (maxOpaicty <= 0) return 0;
+      if (dir) {
+        value -= nOpacityEps;
+        if (value < nOpacityMin) value = nOpacityMin;
+      } else {
+        value += nOpacityEps;
+        if (value > maxOpaicty) value = maxOpaicty;
+      }
+      return value;
+    }
+
+    setCoord(s, obj, z) {
+      const oy =
+        s._callbackFunction instanceof Function ? s.bitmap.height / 2 : 0;
+      s.x = this._hud.x + obj.x;
+      s.y = this._hud.y + obj.y - oy;
+      s.z = z;
+      s.visible = obj.visible;
+    }
+
+    update() {
+      this.paramUpdate();
+      this.updateOpacity();
+      this.updateToneForAll();
+    }
+
+    updateOpacity() {
+      const player = this.getPlayer();
+      if (
+        (!this.checkHitToMouse(this._hud, nFaceDiameter) && this.checkHit()) ||
+        (player && player.isDead())
+      ) {
+        this.setOpacityisNotGlobal(this.getOpacityValue(true));
+      } else {
+        this.setOpacityisNotGlobal(this.getOpacityValue(false));
+      }
+    }
+
+    checkHit() {
+      const x = $gamePlayer.screenX();
+      const y = $gamePlayer.screenY();
+      return (
+        x >= this._hud.x &&
+        y >= this._hud.y &&
+        x < this._hud.x + this._hud.width &&
+        y < this._hud.y + this._hud.height
+      );
+    }
+
+    checkHitToMouse(object, n) {
+      const middle = Vector2.empty();
+      middle.x = object.width / 2 + object.x;
+      middle.y = object.height / 2 + object.y;
+      return Vector2.distance(middle, HUD.MOUSE_EVENT) < n;
+    }
+
+    checkForToneUpdate(obj, cond) {
+      if (obj instanceof Sprite && cond) {
+        const t = (Date.now() % 1000) / 1000;
+        const vt = Vector2.quadraticBezier(this._vtA, this._vtB, this._vtA, t);
+        obj.setColorTone([vt.x, vt.x, vt.x, 0]);
+      } else {
+        if (obj) obj.setColorTone([this._vtA.x, this._vtA.x, this._vtA.x, 0]);
+      }
+    }
+
+    updateToneForAll() {
+      if (!this.getPlayer()) return false;
+      this.checkForToneUpdate(
+        this._hp,
+        this.getPlayer().hpRate() <= nHPGlitter
+      );
+      this.checkForToneUpdate(
+        this._mp,
+        this.getPlayer().mpRate() <= nMPGlitter
+      );
+      this.checkForToneUpdate(this._exp, this.getRealExpRate() >= nEXPGlitter);
+    }
+
+    updateText() {
+      [
+        this._hpText,
+        this._mpText,
+        this._expText,
+        this._levelText,
+        this._nameText,
+      ].forEach((e) => {
+        e.requestUpdate();
+      }, this);
+    }
+
+    paramUpdate() {
+      this._hp.setFrame(0, 0, this.getHpRate(), this._hp.height);
+      this._mp.setFrame(0, 0, this.getMpRate(), this._mp.height);
+      this._exp.setFrame(0, 0, this.getExpRate(), this._exp.height);
+    }
+
+    inBattle() {
+      return (
+        SceneManager._scene instanceof Scene_Battle ||
+        $gameParty.inBattle() ||
+        DataManager.isBattleTest()
+      );
+    }
+
+    get show() {
+      return $gameSystem._rs_hud.show;
+    }
+
+    set show(value) {
+      this.children.forEach((i) => (i.visible = value));
+
+      $gameSystem._rs_hud.show = value;
+
+      if (value) {
+        this.setPosition();
+      }
+    }
+
+    get opacity() {
+      return $gameSystem._rs_hud.opacity;
+    }
+
+    set opacity(value) {
+      this.children.forEach((i) => (i.opacity = value.clamp(0, 255)));
+      $gameSystem._rs_hud.opacity = value.clamp(0, 255);
+    }
+  }
+
+  HUD.GAUGE_EMPTY_TEXT = "0 / 0";
+  HUD.LEVEL_EMPTY_TEXT = "0";
+  HUD.GAUGE_TEMPLATE_TEXT = "%1 / %2";
+  HUD.LEVEL_TEMPLATE_TEXT = "%1";
+  HUD.MOUSE_EVENT = new Vector2(Graphics.width / 2, Graphics.height / 2);
+
+  //=================================================
+  // TouchInput
+  //=================================================
+
+  const alias_TouchInput_onMouseMove = TouchInput._onMouseMove;
+  TouchInput._onMouseMove = function (event) {
+    alias_TouchInput_onMouseMove.call(this, event);
+    const x = Graphics.pageToCanvasX(event.pageX);
+    const y = Graphics.pageToCanvasY(event.pageY);
+    if (HUD.MOUSE_EVENT instanceof Vector2) {
+      HUD.MOUSE_EVENT.set(x, y);
+    }
+  };
+
+  //=================================================
+  // Scene_Map
+  //=================================================
+
+  const alias_Scene_Map_createDisplayObjects =
+    Scene_Map.prototype.createDisplayObjects;
+  const alias_Scene_Map_start = Scene_Map.prototype.start;
+  const alias_Scene_Map_terminate = Scene_Map.prototype.terminate;
+  const alias_Scene_Map_snapForBattleBackground =
+    Scene_Map.prototype.snapForBattleBackground;
+  const alias_Scene_Map_updateFade = Scene_Map.prototype.updateFade;
+
+  Object.assign(Scene_Map.prototype, {
+    createDisplayObjects() {
+      alias_Scene_Map_createDisplayObjects.call(this);
+
+      if (
+        RS.HUD.param.battleOnly ||
+        ($dataMap.meta && $dataMap.meta.DISABLE_HUD)
+      ) {
+        $gameHud = new RS.HUD.EmptyLayer();
+      } else {
+        this._hudLayer = new RS.HUD.Layer();
+        this._hudLayer.setFrame(0, 0, Graphics.width, Graphics.height);
+
+        $gameHud = this._hudLayer;
+        this._hudLayer.drawAllHud();
+
+        this.addChild(this._hudLayer);
+        this.swapChildren(this._windowLayer, this._hudLayer);
+      }
+    },
+
+    start() {
+      alias_Scene_Map_start.call(this);
+      $gameTemp.notifyHudTextRefresh();
+    },
+
+    terminate() {
+      this.removeChild(this._hudLayer);
+      $gameHud = null;
+      alias_Scene_Map_terminate.call(this);
+    },
+
+    snapForBattleBackground() {
+      const temp = $gameHud.show;
+      if ($gameHud && $gameHud.show) $gameHud.show = false;
+      alias_Scene_Map_snapForBattleBackground.call(this);
+      if ($gameHud && !$gameHud.show) {
+        RS.HUD.param.isPreviousShowUp = temp;
+        $gameHud.show = temp;
+      }
+    },
+
+    updateFade() {
+      alias_Scene_Map_updateFade.call(this);
+      if (this._fadeDuration == 0 && RS.HUD.param.isCurrentBattleShowUp) {
+        if ($gameHud) $gameHud.show = RS.HUD.param.isPreviousShowUp;
+        RS.HUD.param.isCurrentBattleShowUp = false;
+      }
+    },
+  });
+
+  //=================================================
+  // Game_Party
+  //=================================================
+
+  const alias_Game_Party_addActor = Game_Party.prototype.addActor;
+  const alias_Game_Party_removeActor = Game_Party.prototype.removeActor;
+
+  Object.assign(Game_Party.prototype, {
+    addActor(actorId) {
+      alias_Game_Party_addActor.call(this, actorId);
+      $gameTemp.notifyHudRefresh();
+    },
+
+    removeActor(actorId) {
+      alias_Game_Party_removeActor.call(this, actorId);
+      $gameTemp.notifyHudRefresh();
+    },
+  });
+
+  //=================================================
+  // Scene_Boot
+  //=================================================
+
+  const alias_Scene_Boot_loadSystemWindowImage =
+    Scene_Boot.prototype.loadSystemWindowImage;
+  const alias_Scene_Boot_start = Scene_Boot.prototype.start;
+
+  Object.assign(Scene_Boot.prototype, {
+    loadSystemWindowImage() {
+      alias_Scene_Boot_loadSystemWindowImage.call(this);
+
+      // Load Face
+      RS.HUD.param.preloadImportantFaces.forEach((i) => RS.HUD.loadFace(i));
+
+      [RS.HUD.param.imgHP, RS.HUD.param.imgMP, RS.HUD.param.imgEXP].forEach(
+        (i) => RS.HUD.loadPicture(i)
+      );
+    },
+
+    start() {
+      alias_Scene_Boot_start.call(this);
+
+      // Load Custom Anchor
+      for (let i = 0; i < RS.HUD.param.nMaxMembers; i++) {
+        RS.HUD.param.ptCustormAnchor.push(
+          RS.HUD.loadCustomPosition(
+            parameters[String("Custom Pos " + (i + 1))] || "0, 0"
+          )
+        );
+      }
+
+      // Load Custom Font
+      if (RS.HUD.param.bUseCustomFont) {
+        const fontSrc = RS.HUD.param.szCustomFontSrc.replace("fonts/", "");
+        FontManager.load(RS.HUD.param.szCustomFontName, fontSrc);
+      }
+    },
+  });
+
+  //=================================================
+  // Scene_Map
+  //=================================================
+
+  const alias_Scene_Battle_updateFade = Scene_Battle.prototype.updateFade;
+  Scene_Battle.prototype.updateFade = function () {
+    alias_Scene_Battle_updateFade.call(this);
+    if (this._fadeDuration == 0 && !RS.HUD.param.isCurrentBattleShowUp) {
+      if ($gameHud) $gameHud.show = true;
+      RS.HUD.param.isCurrentBattleShowUp = true;
+    }
+  };
+
+  //=================================================
+  // Game_Interpreter
+  //=================================================
+
+  PluginManager.registerCommand(pluginName, "opacity", (args) => {
+    $gameHud.opacity = args.opacity;
+  });
+
+  PluginManager.registerCommand(pluginName, "visible", (args) => {
+    $gameHud.show = Boolean(args.valid === "true");
+  });
+
+  PluginManager.registerCommand(pluginName, "import", async (args) => {
+    await RS.HUD.importDataWithAjax2(args.filename + ".json")
+      .then((data) => RS.HUD.loadData(data))
+      .catch((err) => console.warn(err));
+  });
+
+  PluginManager.registerCommand(pluginName, "export", (args) => {
+    RS.HUD.exportData(args.filename + ".json")
+      .then((result) => {})
+      .catch((err) => console.warn(err));
+  });
+
+  //=================================================
+  // String Utils
+  //=================================================
+
+  Object.assign(String.prototype, {
+    /**
+     * String.prototype.toArray
+     */
+    toArray() {
+      return this.split("");
+    },
+
+    /**
+     * String.prototype.reverse
+     */
+    reverse() {
+      return this.toArray().reverse().join("");
+    },
+
+    /**
+     * String.prototype.toComma
+     */
+    toComma() {
+      return this.reverse()
+        .match(/.{1,3}/g)
+        .join(",")
+        .reverse();
+    },
+
+    /**
+     * Replaces %1, %2 and so on in the string to the arguments.
+     *
+     * @method String.prototype.format
+     * @param {Any} ...args The objects to format
+     * @return {String} A formatted string
+     */
+    appendComma(...args) {
+      return this.replace(/%([0-9]+)/g, (s, n) => {
+        return (args[Number(n) - 1] + "").toComma();
+      });
+    },
+  });
+
+  //=================================================
+  // Output Objects
+  //=================================================
+
+  window.HUD = HUD;
 })();

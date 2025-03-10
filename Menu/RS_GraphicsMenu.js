@@ -308,327 +308,312 @@ RS.GraphicsMenu.Params = RS.GraphicsMenu.Params || {};
 RS.Utils = RS.Utils || {};
 
 (() => {
-    "use strict";
+  "use strict";
 
-    const pluginParams = $plugins.filter((i) => {
-        return i.description.contains("<RS_GraphicsMenu>");
+  const pluginParams = $plugins.filter((i) => {
+    return i.description.contains("<RS_GraphicsMenu>");
+  });
+
+  const pluginName = pluginParams.length > 0 && pluginParams[0].name;
+  const parameters = pluginParams.length > 0 && pluginParams[0].parameters;
+
+  RS.Utils.jsonParse = function (str) {
+    let retData = JSON.parse(str, function (k, v) {
+      try {
+        return RS.Utils.jsonParse(v);
+      } catch (e) {
+        return v;
+      }
     });
+    return retData;
+  };
 
-    const pluginName = pluginParams.length > 0 && pluginParams[0].name;
-    const parameters = pluginParams.length > 0 && pluginParams[0].parameters;
+  RS.GraphicsMenu.Params.RECT = RS.Utils.jsonParse(parameters["Menu Rect"]);
+  RS.GraphicsMenu.Params.MENU = RS.Utils.jsonParse(parameters["Menu Index"]);
 
-    RS.Utils.jsonParse = function (str) {
-        let retData = JSON.parse(str, function (k, v) {
-            try {
-                return RS.Utils.jsonParse(v);
-            } catch (e) {
-                return v;
-            }
-        });
-        return retData;
-    };
+  RS.GraphicsMenu.Params.isValidGameCoreUpdate = false;
 
-    RS.GraphicsMenu.Params.RECT = RS.Utils.jsonParse(parameters["Menu Rect"]);
-    RS.GraphicsMenu.Params.MENU = RS.Utils.jsonParse(parameters["Menu Index"]);
+  RS.GraphicsMenu.Params.menuBeforeEval = parameters["Menu Before Eval"];
+  RS.GraphicsMenu.Params.menuAfterEval = parameters["Menu After Eval"];
 
-    RS.GraphicsMenu.Params.isValidGameCoreUpdate = false;
+  //============================================================================
+  // Game_System
+  //============================================================================
 
-    RS.GraphicsMenu.Params.menuBeforeEval = parameters["Menu Before Eval"];
-    RS.GraphicsMenu.Params.menuAfterEval = parameters["Menu After Eval"];
+  var alias_Game_System_initialize = Game_System.prototype.initialize;
+  Game_System.prototype.initialize = function () {
+    alias_Game_System_initialize.call(this);
+    // 세이브 데이터에 저장을 하기 위해 여기에 변수를 정의했습니다.
+    this._menuMouseX = 0;
+    this._menuMouseY = 0;
+  };
 
-    //============================================================================
-    // Game_System
-    //============================================================================
+  Object.defineProperties(Game_System.prototype, {
+    // 마우스 X 좌표
+    menuMouseX: {
+      get: function () {
+        return this._menuMouseX;
+      },
+      set: function (value) {
+        this._menuMouseX = value;
+      },
+      configurable: true,
+    },
+    // 마우스 Y 좌표
+    menuMouseY: {
+      get: function () {
+        return this._menuMouseY;
+      },
+      set: function (value) {
+        this._menuMouseY = value;
+      },
+      configurable: true,
+    },
+  });
 
-    var alias_Game_System_initialize = Game_System.prototype.initialize;
-    Game_System.prototype.initialize = function () {
-        alias_Game_System_initialize.call(this);
-        // 세이브 데이터에 저장을 하기 위해 여기에 변수를 정의했습니다.
-        this._menuMouseX = 0;
-        this._menuMouseY = 0;
-    };
+  //============================================================================
+  // TouchInput
+  //============================================================================
 
-    Object.defineProperties(Game_System.prototype, {
-        // 마우스 X 좌표
-        menuMouseX: {
-            get: function () {
-                return this._menuMouseX;
-            },
-            set: function (value) {
-                this._menuMouseX = value;
-            },
-            configurable: true,
-        },
-        // 마우스 Y 좌표
-        menuMouseY: {
-            get: function () {
-                return this._menuMouseY;
-            },
-            set: function (value) {
-                this._menuMouseY = value;
-            },
-            configurable: true,
-        },
-    });
+  const alias_TouchInput_onHover = TouchInput._onHover;
+  TouchInput._onHover = function (x, y) {
+    alias_TouchInput_onHover.call(this, x, y);
+    if ($gameSystem) {
+      $gameSystem.menuMouseX = x;
+      $gameSystem.menuMouseY = y;
+    }
+  };
 
-    //============================================================================
-    // TouchInput
-    //============================================================================
+  //============================================================================
+  // Scene_LinearMenu
+  //============================================================================
 
-    const alias_TouchInput_onHover = TouchInput._onHover;
-    TouchInput._onHover = function (x, y) {
-        alias_TouchInput_onHover.call(this, x, y);
-        if ($gameSystem) {
-            $gameSystem.menuMouseX = x;
-            $gameSystem.menuMouseY = y;
-        }
-    };
+  class Scene_GraphicsMenu extends Scene_MenuBase {
+    create() {
+      super.create();
 
-    //============================================================================
-    // Scene_LinearMenu
-    //============================================================================
-
-    class Scene_GraphicsMenu extends Scene_MenuBase {
-        create() {
-            super.create();
-
-            this._touched = false;
-            this.executeBeforeEval();
-            this.createImage();
-        }
-
-        /**
-         * YEP_BattleEngine의 Lunatic Mode와 같은 기능으로 메뉴 시작전에 스크립트를 실행합니다.
-         */
-        executeBeforeEval() {
-            try {
-                eval(RS.GraphicsMenu.Params.menuBeforeEval);
-            } catch (e) {
-                console.warn(e);
-            }
-        }
-
-        needsCancelButton() {
-            return false;
-        }
-
-        createHelpWindow() {}
-
-        terminate() {
-            eval(RS.GraphicsMenu.Params.menuAfterEval);
-            super.terminate();
-        }
-
-        update() {
-            super.update();
-            this.updateIndex();
-            this.processExit();
-        }
-
-        right() {
-            const RECT = RS.GraphicsMenu.Params.RECT;
-            Scene_GraphicsMenu.INDEX = (Scene_GraphicsMenu.INDEX + 1).mod(
-                RECT.length
-            );
-            SoundManager.playCursor();
-        }
-
-        left() {
-            const RECT = RS.GraphicsMenu.Params.RECT;
-            Scene_GraphicsMenu.INDEX = (Scene_GraphicsMenu.INDEX - 1).mod(
-                RECT.length
-            );
-            SoundManager.playCursor();
-        }
-
-        updateIndex() {
-            // 키 체크
-            if (Input.isTriggered("right")) {
-                this.right();
-            }
-            if (Input.isTriggered("left")) {
-                this.left();
-            }
-            if (Input.isTriggered("ok")) {
-                this.selectScene();
-            }
-
-            // 마우스 및 터치
-            this.isSelectedInTouchInput();
-
-            // 현재 인덱스에 맞는 영역으로 재설정한다.
-            this.setRect(
-                this._rect[Scene_GraphicsMenu.INDEX],
-                Scene_GraphicsMenu.INDEX
-            );
-        }
-
-        isSelectedInTouchInput() {
-            const menu = RS.GraphicsMenu.Params.MENU;
-            if (!menu) return;
-
-            const W = parseInt(parameters["W"]);
-            const H = parseInt(parameters["H"]);
-            const x = RS.GraphicsMenu.Params.startX;
-            const y = RS.GraphicsMenu.Params.startY;
-            const width = Math.floor(W * menu.length);
-            const height = H;
-            let mx = $gameSystem.menuMouseX || 0;
-            let my = $gameSystem.menuMouseY || 0;
-
-            if (Utils.isMobileDevice()) {
-                mx = TouchInput.x;
-                my = TouchInput.y;
-            }
-
-            // 인덱스 값 : (마우스 좌표 - 메뉴 시작 위치) / 메뉴의 폭
-            const index = Math.floor((mx - x) / W);
-            const previousIndex = Scene_GraphicsMenu.INDEX;
-
-            // 범위 내에 있는 지 확인
-            if (mx > x && my > y && mx < x + width && my < y + height) {
-                Scene_GraphicsMenu.INDEX = index.clamp(0, menu.length - 1);
-                if (TouchInput.isTriggered()) this.selectScene();
-            }
-
-            // 커서 사운드 재생
-            if (previousIndex !== Scene_GraphicsMenu.INDEX && !this._touched) {
-                SoundManager.playCursor();
-                this._touched = true;
-            } else {
-                this._touched = false;
-            }
-        }
-
-        selectScene() {
-            const sceneObject =
-                RS.GraphicsMenu.Params.MENU[Scene_GraphicsMenu.INDEX];
-
-            if (sceneObject.endsWith(":exit")) {
-                setTimeout(() => {
-                    this._touched = false;
-                    SoundManager.playOk();
-                    SceneManager.exit();
-                }, 0);
-
-                return;
-            }
-            if (
-                sceneObject
-                    .replace(/[\n]+/, ";")
-                    .match(/(?:EVAL[ ]*:[ ]*)(.*)/im)
-            ) {
-                try {
-                    this._touched = false;
-                    eval(RegExp.$1);
-                    SoundManager.playOk();
-                } catch (e) {
-                    console.warn(e);
-                }
-            }
-            if (typeof window[sceneObject] === "function") {
-                // push : 현재 메뉴 씬을 메뉴 스택에 누적
-                this._touched = false;
-                SceneManager.push(window[sceneObject]);
-                SoundManager.playOk();
-            }
-        }
-
-        processExit() {
-            if (Scene_Map.prototype.isMenuCalled.call(this)) {
-                // goto : 메뉴 스택에 누적하지 않고 씬 오브젝트 생성
-                this._touched = false;
-                SceneManager.goto(Scene_Map);
-                SoundManager.playCancel();
-            }
-        }
-
-        loadBitmap(x, y, w, h, index) {
-            // 드로우 콜을 줄이기 위해 하나의 이미지만 사용
-            const sprite = new Sprite(
-                ImageManager.loadPicture(parameters["Menu Image"])
-            );
-            sprite.setFrame(x, y, w, h);
-            this.addChild(sprite);
-            return sprite;
-        }
-
-        createImage() {
-            const RECT = RS.GraphicsMenu.Params.RECT;
-            var W = parseInt(parameters["W"]);
-            var H = parseInt(parameters["H"]);
-
-            RS.GraphicsMenu.Params.startX = eval(parameters["Start X"]);
-            RS.GraphicsMenu.Params.startY = eval(parameters["Start Y"]);
-
-            this._rect = [];
-
-            for (let i = 0; i < RECT.length; i++) {
-                const imageRect = RECT[i];
-                if (!imageRect) continue;
-                this._rect[i] = this.loadBitmap(
-                    imageRect.x,
-                    0,
-                    imageRect.width,
-                    imageRect.height
-                );
-                this._rect[i].x = RS.GraphicsMenu.Params.startX + imageRect.x;
-                this._rect[i].y = RS.GraphicsMenu.Params.startY + 0;
-            }
-            this.setRect(
-                this._rect[Scene_GraphicsMenu.INDEX],
-                Scene_GraphicsMenu.INDEX
-            );
-        }
-
-        /**
-         * @method setRect
-         * @param {Object} rect
-         * @param {Number} i
-         */
-        setRect(rect, index) {
-            const dRect = RS.GraphicsMenu.Params.RECT;
-            const H = parseInt(parameters["H"]);
-
-            // 선택된 메뉴를 마우스 오버 상태의 이미지로 변경
-            rect.setFrame(
-                dRect[index].x,
-                H,
-                dRect[index].width,
-                dRect[index].height
-            );
-
-            for (let i = 0; i < dRect.length; i++) {
-                // 선택된 메뉴가 아니라면 모두 일반 이미지로 변경
-                if (i === Scene_GraphicsMenu.INDEX) continue;
-                this._rect[i].setFrame(
-                    dRect[i].x,
-                    0,
-                    dRect[i].width,
-                    dRect[i].height
-                );
-            }
-        }
+      this._touched = false;
+      this.executeBeforeEval();
+      this.createImage();
     }
 
-    Scene_GraphicsMenu.INDEX = 0;
+    /**
+     * YEP_BattleEngine의 Lunatic Mode와 같은 기능으로 메뉴 시작전에 스크립트를 실행합니다.
+     */
+    executeBeforeEval() {
+      try {
+        eval(RS.GraphicsMenu.Params.menuBeforeEval);
+      } catch (e) {
+        console.warn(e);
+      }
+    }
 
-    //============================================================================
-    // Scene_Map
-    //============================================================================
-    Scene_Map.prototype.callMenu = function () {
-        SoundManager.playOk();
-        SceneManager.push(Scene_GraphicsMenu);
-        $gameTemp.clearDestination();
-        this._mapNameWindow.hide();
-        this._waitCount = 2;
-    };
+    needsCancelButton() {
+      return false;
+    }
 
-    Game_Interpreter.prototype.command351 = function () {
-        if (!$gameParty.inBattle()) {
-            SceneManager.push(Scene_GraphicsMenu);
-            Window_MenuCommand.initCommandPosition();
+    createHelpWindow() {}
+
+    terminate() {
+      eval(RS.GraphicsMenu.Params.menuAfterEval);
+      super.terminate();
+    }
+
+    update() {
+      super.update();
+      this.updateIndex();
+      this.processExit();
+    }
+
+    right() {
+      const RECT = RS.GraphicsMenu.Params.RECT;
+      Scene_GraphicsMenu.INDEX = (Scene_GraphicsMenu.INDEX + 1).mod(
+        RECT.length
+      );
+      SoundManager.playCursor();
+    }
+
+    left() {
+      const RECT = RS.GraphicsMenu.Params.RECT;
+      Scene_GraphicsMenu.INDEX = (Scene_GraphicsMenu.INDEX - 1).mod(
+        RECT.length
+      );
+      SoundManager.playCursor();
+    }
+
+    updateIndex() {
+      // 키 체크
+      if (Input.isTriggered("right")) {
+        this.right();
+      }
+      if (Input.isTriggered("left")) {
+        this.left();
+      }
+      if (Input.isTriggered("ok")) {
+        this.selectScene();
+      }
+
+      // 마우스 및 터치
+      this.isSelectedInTouchInput();
+
+      // 현재 인덱스에 맞는 영역으로 재설정한다.
+      this.setRect(
+        this._rect[Scene_GraphicsMenu.INDEX],
+        Scene_GraphicsMenu.INDEX
+      );
+    }
+
+    isSelectedInTouchInput() {
+      const menu = RS.GraphicsMenu.Params.MENU;
+      if (!menu) return;
+
+      const W = parseInt(parameters["W"]);
+      const H = parseInt(parameters["H"]);
+      const x = RS.GraphicsMenu.Params.startX;
+      const y = RS.GraphicsMenu.Params.startY;
+      const width = Math.floor(W * menu.length);
+      const height = H;
+      let mx = $gameSystem.menuMouseX || 0;
+      let my = $gameSystem.menuMouseY || 0;
+
+      if (Utils.isMobileDevice()) {
+        mx = TouchInput.x;
+        my = TouchInput.y;
+      }
+
+      // 인덱스 값 : (마우스 좌표 - 메뉴 시작 위치) / 메뉴의 폭
+      const index = Math.floor((mx - x) / W);
+      const previousIndex = Scene_GraphicsMenu.INDEX;
+
+      // 범위 내에 있는 지 확인
+      if (mx > x && my > y && mx < x + width && my < y + height) {
+        Scene_GraphicsMenu.INDEX = index.clamp(0, menu.length - 1);
+        if (TouchInput.isTriggered()) this.selectScene();
+      }
+
+      // 커서 사운드 재생
+      if (previousIndex !== Scene_GraphicsMenu.INDEX && !this._touched) {
+        SoundManager.playCursor();
+        this._touched = true;
+      } else {
+        this._touched = false;
+      }
+    }
+
+    selectScene() {
+      const sceneObject = RS.GraphicsMenu.Params.MENU[Scene_GraphicsMenu.INDEX];
+
+      if (sceneObject.endsWith(":exit")) {
+        setTimeout(() => {
+          this._touched = false;
+          SoundManager.playOk();
+          SceneManager.exit();
+        }, 0);
+
+        return;
+      }
+      if (sceneObject.replace(/[\n]+/, ";").match(/(?:EVAL[ ]*:[ ]*)(.*)/im)) {
+        try {
+          this._touched = false;
+          eval(RegExp.$1);
+          SoundManager.playOk();
+        } catch (e) {
+          console.warn(e);
         }
-        return true;
-    };
+      }
+      if (typeof window[sceneObject] === "function") {
+        // push : 현재 메뉴 씬을 메뉴 스택에 누적
+        this._touched = false;
+        SceneManager.push(window[sceneObject]);
+        SoundManager.playOk();
+      }
+    }
+
+    processExit() {
+      if (Scene_Map.prototype.isMenuCalled.call(this)) {
+        // goto : 메뉴 스택에 누적하지 않고 씬 오브젝트 생성
+        this._touched = false;
+        SceneManager.goto(Scene_Map);
+        SoundManager.playCancel();
+      }
+    }
+
+    loadBitmap(x, y, w, h, index) {
+      // 드로우 콜을 줄이기 위해 하나의 이미지만 사용
+      const sprite = new Sprite(
+        ImageManager.loadPicture(parameters["Menu Image"])
+      );
+      sprite.setFrame(x, y, w, h);
+      this.addChild(sprite);
+      return sprite;
+    }
+
+    createImage() {
+      const RECT = RS.GraphicsMenu.Params.RECT;
+      var W = parseInt(parameters["W"]);
+      var H = parseInt(parameters["H"]);
+
+      RS.GraphicsMenu.Params.startX = eval(parameters["Start X"]);
+      RS.GraphicsMenu.Params.startY = eval(parameters["Start Y"]);
+
+      this._rect = [];
+
+      for (let i = 0; i < RECT.length; i++) {
+        const imageRect = RECT[i];
+        if (!imageRect) continue;
+        this._rect[i] = this.loadBitmap(
+          imageRect.x,
+          0,
+          imageRect.width,
+          imageRect.height
+        );
+        this._rect[i].x = RS.GraphicsMenu.Params.startX + imageRect.x;
+        this._rect[i].y = RS.GraphicsMenu.Params.startY + 0;
+      }
+      this.setRect(
+        this._rect[Scene_GraphicsMenu.INDEX],
+        Scene_GraphicsMenu.INDEX
+      );
+    }
+
+    /**
+     * @method setRect
+     * @param {Object} rect
+     * @param {Number} i
+     */
+    setRect(rect, index) {
+      const dRect = RS.GraphicsMenu.Params.RECT;
+      const H = parseInt(parameters["H"]);
+
+      // 선택된 메뉴를 마우스 오버 상태의 이미지로 변경
+      rect.setFrame(dRect[index].x, H, dRect[index].width, dRect[index].height);
+
+      for (let i = 0; i < dRect.length; i++) {
+        // 선택된 메뉴가 아니라면 모두 일반 이미지로 변경
+        if (i === Scene_GraphicsMenu.INDEX) continue;
+        this._rect[i].setFrame(dRect[i].x, 0, dRect[i].width, dRect[i].height);
+      }
+    }
+  }
+
+  Scene_GraphicsMenu.INDEX = 0;
+
+  //============================================================================
+  // Scene_Map
+  //============================================================================
+  Scene_Map.prototype.callMenu = function () {
+    SoundManager.playOk();
+    SceneManager.push(Scene_GraphicsMenu);
+    $gameTemp.clearDestination();
+    this._mapNameWindow.hide();
+    this._waitCount = 2;
+  };
+
+  Game_Interpreter.prototype.command351 = function () {
+    if (!$gameParty.inBattle()) {
+      SceneManager.push(Scene_GraphicsMenu);
+      Window_MenuCommand.initCommandPosition();
+    }
+    return true;
+  };
 })();

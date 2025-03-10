@@ -2,6 +2,12 @@
 
 This plugin package includes helpful features to get you on your way to create your game in RPG Maker MZ.
 
+## Developer's Note
+
+During the RPG Maker MV era, I wrote over 150+ plugins since 2015. However, after the release of RPG Maker MZ and my transition into a web development career, I found myself with less time to work. By the time I got home from work, I was completely exhausted and couldn’t do anything. This made porting plugins very challenging. In the five years following MZ’s release, I managed to port only around 40+ plugins. Meanwhile, many plugins with similar functionalities were released, leading some to lose the will to port them. Today, the presence of numerous AIs further diminishes my motivation.
+
+However, I have not stopped coding and continue to be actively involved, promptly addressing any incoming issues. Although I mostly participate in Korean communities (such as Discord), I always keep an eye on GitHub issues—so please feel free to actively use the issue tracker.
+
 ## How to upstream to `MV` repository
 
 to upstream to `MV` repository, you need to follow the steps below:

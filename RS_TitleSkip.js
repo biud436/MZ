@@ -27,30 +27,30 @@
  * @help
  */
 (() => {
-    const pluginParams = $plugins.filter((i) => {
-        return i.description.contains("<RS_TitleSkip>");
-    });
+  const pluginParams = $plugins.filter((i) => {
+    return i.description.contains("<RS_TitleSkip>");
+  });
 
-    const pluginName = pluginParams.length > 0 && pluginParams[0].name;
-    const parameters = pluginParams.length > 0 && pluginParams[0].parameters;
+  const pluginName = pluginParams.length > 0 && pluginParams[0].name;
+  const parameters = pluginParams.length > 0 && pluginParams[0].parameters;
 
-    const params = {
-        isReload: Boolean(parameters["Reload"] === "true"),
-    };
+  const params = {
+    isReload: Boolean(parameters["Reload"] === "true"),
+  };
 
-    Scene_Boot.prototype.startNormalGame = function () {
-        this.checkPlayerLocation();
-        DataManager.setupNewGame();
-        SceneManager.goto(Scene_Map);
-        Window_TitleCommand.initCommandPosition();
-    };
+  Scene_Boot.prototype.startNormalGame = function () {
+    this.checkPlayerLocation();
+    DataManager.setupNewGame();
+    SceneManager.goto(Scene_Map);
+    Window_TitleCommand.initCommandPosition();
+  };
 
-    Scene_GameEnd.prototype.commandToTitle = function () {
-        this.fadeOutAll();
-        if (params.isReload) {
-            SceneManager.reloadGame();
-        } else {
-            SceneManager.goto(Scene_Boot);
-        }
-    };
+  Scene_GameEnd.prototype.commandToTitle = function () {
+    this.fadeOutAll();
+    if (params.isReload) {
+      SceneManager.reloadGame();
+    } else {
+      SceneManager.goto(Scene_Boot);
+    }
+  };
 })();
