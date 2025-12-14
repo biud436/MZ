@@ -1,6 +1,7 @@
 //================================================================
 // RS_YoutubePlayer.js
 // ---------------------------------------------------------------
+// ---------------------------------------------------------------
 // The MIT License
 // Copyright (c) 2016 biud436
 // ---------------------------------------------------------------
@@ -41,6 +42,17 @@
  * @off Playback once
  *
  * @help
+ * =============================================================================
+ * DEPRECATED WARNING
+ * =============================================================================
+ * This plugin is DEPRECATED and no longer works in NW.js due to YouTube's
+ * policy changes (Error 153). It only works in web browsers.
+ * Please do not use this plugin for new projects.
+ *
+ * 이 플러그인은 YouTube 정책 변경(Error 153)으로 인해 NW.js에서 작동하지 않습니다.
+ * 웹 브라우저에서만 동작하며, 새로운 프로젝트에서는 사용하지 마세요.
+ * =============================================================================
+ *
  * In general, In Android Chrome and Mobile Safari, It doesn't automatically
  * start playback. and you can stop the video by clicking around the YouTube video.
  * This plugin will automatically end the video playback if you watches
@@ -57,182 +69,6 @@
  *
  * =============================================================================
  * Change Log
- * =============================================================================
- * 2016.05.08 (v1.0.0) - First Release
- * 2016.05.09 (v1.0.1) - Added Error Handler
- * 2016.05.12 (v1.0.2) - Fixed a function that parses a URL.
- * 2016.07.04 (v1.0.3) - Fixed a few logic about the range were converted to Rectangular object.
- * 2016.10.06 (v1.0.4) - Added Canvas Filters.
- * 2016.12.10 (v1.0.5) :
- * - Added a plugin parameter about video quality settings.
- * - Added the ability to play YouTube videos from a specified time.
- * 2017.08.31 (v1.0.6) :
- * - Added a feature that the video size sets up with a fullscreen mode.
- * - Added a feature that can set the video to loop
- * 2018.01.08 (v1.0.7) :
- * - Now that The YouTube iframe will be newly created every times when playing back the video.
- * - Fixed the bug that is not available the function called YTPlayer.isEnded();
- * 2022.04.08 (v1.1.0) :
- * It is now possible to play the video as a fullscreen mode only.
- * if you want to use previous version,
- * Try to download this, and replace the RS_YoutubePlayer.js in the plugin folder.
- * link : https://raw.githubusercontent.com/biud436/MZ/1a58ef44540172f675d162f32d2e11ea56fb7455/RS_YoutubePlayer.js
- * 2022.04.09 (v1.1.1) :
- * - fixed the bug that is not working escape key after adding this plugin.
- *
- * @command play
- * @desc
- *
- * @arg src
- * @type string
- * @desc Specify the youtube url
- * @default https://www.youtube.com/watch?v=C4ze-KCSxQY
- *
- * @command stop
- * @desc
- */
-/*:ko
- * @target MZ
- * @plugindesc 유튜브 플레이어 <RS_YoutubePlayer>
- * @author 러닝은빛(biud436)
- * @url biud436.tistory.com
- *
- * @param Video Quality
- * @desc 비디오 품질(화질)을 설정합니다.
- * default : hd720
- * @default hd720
- * @type select
- * @option highres
- * @option hd1080
- * @option hd720
- * @option large
- * @option medium
- * @option small
- *
- * @param Size
- * @type select
- * @desc 기본 유튜브 플레이어의 크기를 지정합니다.
- * @default Normal
- * @option 보통 (560 * 315px)
- * @value Normal
- * @option 전체 화면
- * @value Fullscreen
- *
- * @param Looping
- * @type boolean
- * @desc 동영상 반복 재생 여부를 지정합니다
- * @default false
- * @on 루프로 설정
- * @off 한 번만 재생
- *
- * @help
- * 안드로이드 '크롬'과 모바일 '사파리'에서는 동영상이 자동으로 재생되지 않습니다.
- * 유튜브 플레이어를 종료하고자 한다면 동영상 영역의 바깥 쪽을 클릭하시거나,
- * 동영상이 끝날 때 까지 기다려주세요.
- *
- * =============================================================================
- * 스크립트 명령
- * =============================================================================
- * 유튜브 동영상을 '스크립트 커맨드'로 재생하려면 다음을 호출하세요.
- * Graphics.playYoutube("https://www.youtube.com/watch?v=C4ze-KCSxQY");
- *
- * 재생 중인 유튜브 동영상의 상태를 유튜브 API로 확인할 수 있습니다.
- * 직접 접근하려면 YTPlayer 전역 객체를 사용하세요.
- *
- * if(YTPlayer.isPlaying()) YTPlayer.stopVideo();
- * YTPlayer.isPaused();
- * YTPlayer.isBuffering();
- * YTPlayer.isEnded();
- *
- * =============================================================================
- * 버전 로그
- * =============================================================================
- * 2016.05.08 (v1.0.0) - First Release
- * 2016.05.09 (v1.0.1) - Added Error Handler
- * 2016.05.12 (v1.0.2) - Fixed a function that parses a URL.
- * 2016.07.04 (v1.0.3) - Fixed a few logic about the range were converted to Rectangular object.
- * 2016.10.06 (v1.0.4) - Added Canvas Filters.
- * 2016.12.10 (v1.0.5) :
- * - Added a plugin parameter about video quality settings.
- * - Added the ability to play YouTube videos from a specified time.
- * 2017.08.31 (v1.0.6) :
- * - Added a feature that the video size sets up with a fullscreen mode.
- * - Added a feature that can set the video to loop
- * 2018.01.08 (v1.0.7) :
- * - Now that The YouTube iframe will be newly created every times when playing back the video.
- * - Fixed the bug that is not available the function called YTPlayer.isEnded();
- * 2022.04.08 (v1.1.0) :
- * It is now possible to play the video as a fullscreen mode only.
- * if you want to use previous version,
- * Try to download this, and replace the RS_YoutubePlayer.js in the plugin folder.
- * link : https://raw.githubusercontent.com/biud436/MZ/1a58ef44540172f675d162f32d2e11ea56fb7455/RS_YoutubePlayer.js
- * 2022.04.09 (v1.1.1) :
- * - fixed the bug that is not working escape key after adding this plugin.
- *
- * @command play
- * @desc
- *
- * @arg src
- * @type string
- * @desc Specify the youtube url
- * @default https://www.youtube.com/watch?v=C4ze-KCSxQY
- *
- * @command stop
- * @desc
- */
-/*:ja
- * @target MZ
- * @plugindesc ユーチューブプレイヤーです。<RS_YoutubePlayer>
- * @author biud436
- * @url biud436.tistory.com
- *
- * @param Video Quality
- * @desc 動画の品質を設定します。
- * default : hd720
- * @default hd720
- * @type select
- * @option highres
- * @option hd1080
- * @option hd720
- * @option large
- * @option medium
- * @option small
- *
- * @param Size
- * @type select
- * @desc ユーチューブプレーヤーの動画の大きさを指定します。
- * @default Normal
- * @option 普通 (560 * 315px)
- * @value Normal
- * @option フルスクリーンモード
- * @value Fullscreen
- *
- * @param Looping
- * @type boolean
- * @desc 動画反復再生するかどうかを指定してください。
- * @default false
- * @on 繰り返し再生
- * @off 一度再生
- *
- * @help
- * アンドロイドクロムとモバイルのサファリでは、自動で動画が再生されません。
- * ユーチューブプレーヤーを終了するには、動画領域の外側をクリックすればいいです
- * それとも動画が終わるまで待ってください。
- *
- * =============================================================================
- * スクリプトコマンドについて
- * =============================================================================
- * Graphics.playYoutube("YOUTUBE_URL"); // ユーチューブ動画を再生します。
- *
- * 再生中のユーチューブ動画の状態をで確認できます。
- *
- * if(YTPlayer.isPlaying()) YTPlayer.stopVideo();
- * YTPlayer.isPaused();
- * YTPlayer.isBuffering();
- * YTPlayer.isEnded();
- *
- * =============================================================================
- * Version
  * =============================================================================
  * 2016.05.08 (v1.0.0) - First Release
  * 2016.05.09 (v1.0.1) - Added Error Handler

@@ -8,6 +8,12 @@ During the RPG Maker MV era, I wrote over 150+ plugins since 2015. However, afte
 
 However, I have not stopped coding and continue to be actively involved, promptly addressing any incoming issues. Although I mostly participate in Korean communities (such as Discord), I always keep an eye on GitHub issues—so please feel free to actively use the issue tracker.
 
+## Deprecated Plugins
+
+The following plugins are deprecated and moved to `Deprecated/` folder:
+
+- **RS_YoutubePlayer.js** → **Deprecated/RS_YoutubePlayer.js** - YouTube policy changes (Error 153) prevent this plugin from working in NW.js. Only works in web browsers.
+
 ## How to upstream to `MV` repository
 
 to upstream to `MV` repository, you need to follow the steps below:
